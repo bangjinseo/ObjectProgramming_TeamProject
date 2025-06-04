@@ -52,36 +52,26 @@ class Background {
 private:
     sf::Texture texture;
     sf::Sprite sprite;
-    std::string currentFile = "frame3.png";
+    std::string currentFile = "bg_playground.png";
 
 public:
     bool init(const sf::RenderWindow& window) {
-        return load("frame3.png", window);
-    }
-//수정한 부분
-bool load(const std::string& filename, const sf::RenderWindow& window) {
-    if (!texture.loadFromFile(filename)) {
-        std::cerr << filename << " 로딩 실패!" << std::endl;
-
-        // 현재 실행 경로 출력
-        #include <filesystem>
-        std::cout << "현재 실행 경로: " << std::filesystem::current_path() << std::endl;
-
-        return false;
+        return load("bg_playground.png", window);
     }
 
-    std::cout << filename << " 텍스처 사이즈: "
-              << texture.getSize().x << "x" << texture.getSize().y << std::endl;
+    bool load(const std::string& filename, const sf::RenderWindow& window) {
+        if (!texture.loadFromFile(filename)) {
+            std::cerr << filename << " 로딩 실패!" << std::endl;
+            return false;
+        }
 
-    sprite.setTexture(texture);
-
-    float scaleX = window.getSize().x / static_cast<float>(texture.getSize().x);
-    float scaleY = window.getSize().y / static_cast<float>(texture.getSize().y);
-    sprite.setScale(scaleX, scaleY);
-
-    currentFile = filename;
-    return true;
-}
+        sprite.setTexture(texture);
+        float scaleX = window.getSize().x / static_cast<float>(texture.getSize().x);
+        float scaleY = window.getSize().y / static_cast<float>(texture.getSize().y);
+        sprite.setScale(scaleX, scaleY);
+        currentFile = filename;
+        return true;
+    }
 
     void draw(sf::RenderWindow& window) {
         window.draw(sprite);
@@ -99,12 +89,12 @@ private:
 public:
     bool init() {
         textures.resize(2);
-        if (!textures[0].loadFromFile("frame1.png")) {
-            std::cerr << "frame1.png 로딩 실패!" << std::endl;
+        if (!textures[0].loadFromFile("kn_beggar1.png")) {
+            std::cerr << "kn_beggar1.png 로딩 실패!" << std::endl;
             return false;
         }
-        if (!textures[1].loadFromFile("frame2.png")) {
-            std::cerr << "frame2.png 로딩 실패!" << std::endl;
+        if (!textures[1].loadFromFile("kn_beggar2.png")) {
+            std::cerr << "kn_beggar2.png 로딩 실패!" << std::endl;
             return false;
         }
 
@@ -167,20 +157,18 @@ private:
             if (event.type == sf::Event::Closed)
                 window.close();
 
-            if (event.type == sf::Event::KeyPressed &&
-                event.key.code == sf::Keyboard::Space) {
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space) {
                 moneyDisplay.increase();
             }
 
-            if (event.type == sf::Event::MouseButtonPressed &&
-                event.mouseButton.button == sf::Mouse::Left) {
+            if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 sf::Vector2f mousePos = window.mapPixelToCoords({ event.mouseButton.x, event.mouseButton.y });
                 std::wcout << L"[클릭 위치] x: " << mousePos.x << ", y: " << mousePos.y << std::endl;
 
                 if (!backgroundChanged && clickableArea.getGlobalBounds().contains(mousePos)) {
-                    if (background.load("구걸장소 이동.png", window)) {
+                    if (background.load("MovingBeggingPlace_bg.png", window)) {
                         backgroundChanged = true;
-                        std::cout << "[배경 전환] 구걸장소 이동.png 적용됨\n";
+                        std::cout << "[배경 전환] MovingBeggingPlace_bg.png 적용됨\n";
                     }
                 }
             }
