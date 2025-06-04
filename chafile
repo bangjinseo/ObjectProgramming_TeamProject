@@ -58,17 +58,23 @@ public:
     bool init(const sf::RenderWindow& window) {
         return load("frame3.png", window);
     }
-
-    // 수정한 부분!!!!!!!
-    bool load(const std::string& filename, const sf::RenderWindow& window) {
+//수정한 부분
+bool load(const std::string& filename, const sf::RenderWindow& window) {
     if (!texture.loadFromFile(filename)) {
         std::cerr << filename << " 로딩 실패!" << std::endl;
+
+        // 현재 실행 경로 출력
+        #include <filesystem>
+        std::cout << "현재 실행 경로: " << std::filesystem::current_path() << std::endl;
+
         return false;
     }
 
+    std::cout << filename << " 텍스처 사이즈: "
+              << texture.getSize().x << "x" << texture.getSize().y << std::endl;
+
     sprite.setTexture(texture);
 
-    // 이 부분을 이미지마다 갱신되도록 반드시 호출
     float scaleX = window.getSize().x / static_cast<float>(texture.getSize().x);
     float scaleY = window.getSize().y / static_cast<float>(texture.getSize().y);
     sprite.setScale(scaleX, scaleY);
