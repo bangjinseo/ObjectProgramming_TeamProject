@@ -59,19 +59,23 @@ public:
         return load("frame3.png", window);
     }
 
+    // 수정한 부분!!!!!!!
     bool load(const std::string& filename, const sf::RenderWindow& window) {
-        if (!texture.loadFromFile(filename)) {
-            std::cerr << filename << " 로딩 실패!" << std::endl;
-            return false;
-        }
-
-        sprite.setTexture(texture);
-        float scaleX = window.getSize().x / static_cast<float>(texture.getSize().x);
-        float scaleY = window.getSize().y / static_cast<float>(texture.getSize().y);
-        sprite.setScale(scaleX, scaleY);
-        currentFile = filename;
-        return true;
+    if (!texture.loadFromFile(filename)) {
+        std::cerr << filename << " 로딩 실패!" << std::endl;
+        return false;
     }
+
+    sprite.setTexture(texture);
+
+    // 이 부분을 이미지마다 갱신되도록 반드시 호출
+    float scaleX = window.getSize().x / static_cast<float>(texture.getSize().x);
+    float scaleY = window.getSize().y / static_cast<float>(texture.getSize().y);
+    sprite.setScale(scaleX, scaleY);
+
+    currentFile = filename;
+    return true;
+}
 
     void draw(sf::RenderWindow& window) {
         window.draw(sprite);
