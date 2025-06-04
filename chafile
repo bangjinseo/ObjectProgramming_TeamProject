@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <locale>
 
 std::wstring formatMoney(int money) {
     std::wstring result;
@@ -128,7 +129,9 @@ private:
     bool backgroundChanged = false;
 
 public:
-    Game() : window(sf::VideoMode(405, 720), "Homeless Character Animation") {}
+    Game() : window(sf::VideoMode(405, 720), "Homeless Character Animation") {
+        std::locale::global(std::locale(""));
+    }
 
     bool init() {
         if (!moneyDisplay.init() || !background.init(window) || !character.init())
@@ -163,7 +166,8 @@ private:
 
             if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 sf::Vector2f mousePos = window.mapPixelToCoords({ event.mouseButton.x, event.mouseButton.y });
-                std::wcout << L"[클릭 위치] x: " << mousePos.x << ", y: " << mousePos.y << std::endl;
+                std::wcout.imbue(std::locale(""));
+                std::wcout << L"[클릭 위치] x: " << static_cast<int>(mousePos.x) << L", y: " << static_cast<int>(mousePos.y) << std::endl;
 
                 if (!backgroundChanged && clickableArea.getGlobalBounds().contains(mousePos)) {
                     if (background.load("MovingBeggingPlace_bg.png", window)) {
