@@ -74,6 +74,10 @@ public:
         return true;
     }
 
+    const std::string& getCurrentFile() const {
+        return currentFile;
+    }
+
     void draw(sf::RenderWindow& window) {
         window.draw(sprite);
     }
@@ -126,19 +130,20 @@ private:
     Character character;
 
     sf::RectangleShape clickableArea;
-    bool backgroundChanged = false;
+    std::string lastScene = "bg_playground.png";
 
 public:
-    Game() : window(sf::VideoMode(405, 720), "Homeless Character Animation") {
-        std::locale::global(std::locale(""));
-    }
+    Game() : window(sf::VideoMode(405, 720), "Homeless Character Animation") {}
 
     bool init() {
+        std::locale::global(std::locale(""));
+        std::wcout.imbue(std::locale(""));
+
         if (!moneyDisplay.init() || !background.init(window) || !character.init())
             return false;
 
-        clickableArea.setSize({ 182.f, 42.f });
-        clickableArea.setPosition(204.f, 618.f);
+        clickableArea.setSize({ 180.f, 40.f });
+        clickableArea.setPosition(203.f, 621.f);
         clickableArea.setOutlineColor(sf::Color::White);
         clickableArea.setOutlineThickness(2.f);
 
@@ -166,13 +171,27 @@ private:
 
             if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 sf::Vector2f mousePos = window.mapPixelToCoords({ event.mouseButton.x, event.mouseButton.y });
-                std::wcout.imbue(std::locale(""));
                 std::wcout << L"[클릭 위치] x: " << static_cast<int>(mousePos.x) << L", y: " << static_cast<int>(mousePos.y) << std::endl;
 
-                if (!backgroundChanged && clickableArea.getGlobalBounds().contains(mousePos)) {
-                    if (background.load("MovingBeggingPlace_bg.png", window)) {
-                        backgroundChanged = true;
-                        std::cout << "[배경 전환] MovingBeggingPlace_bg.png 적용됨\n";
+                if (background.getCurrentFile() != "MovingBeggingPlace_bg.png" && clickableArea.getGlobalBounds().contains(mousePos)) {
+                    lastScene = background.getCurrentFile();
+                    background.load("MovingBeggingPlace_bg.png", window);
+                }
+                else if (background.getCurrentFile() == "MovingBeggingPlace_bg.png") {
+                    if (sf::FloatRect(23, 159, 157, 189).contains(mousePos)) {
+                        background.load("bg_playground.png", window);
+                    }
+                    else if (sf::FloatRect(209, 159, 155, 192).contains(mousePos)) {
+                        background.load("bg_dujeongStaion.png", window);
+                    }
+                    else if (sf::FloatRect(24, 438, 157, 187).contains(mousePos)) {
+                        background.load("bg_seouStation.png", window);
+                    }
+                    else if (sf::FloatRect(208, 436, 156, 185).contains(mousePos)) {
+                        background.load("bg_google.png", window);
+                    }
+                    else if (sf::FloatRect(350, 92, 28, 23).contains(mousePos)) {
+                        background.load(lastScene, window);
                     }
                 }
             }
@@ -180,15 +199,17 @@ private:
     }
 
     void update() {
-        if (!backgroundChanged)
+        if (background.getCurrentFile() != "MovingBeggingPlace_bg.png") {
             character.update();
+        }
     }
 
     void render() {
         window.clear();
         background.draw(window);
-        if (!backgroundChanged)
+        if (background.getCurrentFile() != "MovingBeggingPlace_bg.png") {
             character.draw(window);
+        }
         moneyDisplay.draw(window);
         window.display();
     }
