@@ -133,6 +133,14 @@ private:
     sf::Sprite mjSprite;
     bool showMyeongjun = false;
 
+    sf::Texture ahTexture;
+    sf::Sprite ahSprite;
+    bool showAhyeon = false;
+
+    sf::Texture jsTexture;
+    sf::Sprite jsSprite;
+    bool showJinseo = false;
+
     sf::RectangleShape clickableArea;
     std::string lastScene = "bg_playground.png";
 
@@ -151,13 +159,31 @@ public:
         clickableArea.setOutlineColor(sf::Color::White);
         clickableArea.setOutlineThickness(2.f);
 
-        if (!mjTexture.loadFromFile("명준.png")) {
-            std::cerr << "명준.png 로딩 실패!" << std::endl;
+        if (!mjTexture.loadFromFile("friends_mj.png")) {
+            std::cerr << "friends_mj.png 로딩 실패!" << std::endl;
         }
         else {
             mjSprite.setTexture(mjTexture);
             mjSprite.setScale(0.5f, 0.5f);
             mjSprite.setPosition(100.f, 400.f);
+        }
+
+        if (!ahTexture.loadFromFile("friends_ah.png")) {
+            std::cerr << "friends_ah.png 로딩 실패!" << std::endl;
+        }
+        else {
+            ahSprite.setTexture(ahTexture);
+            ahSprite.setScale(0.5f, 0.5f);
+            ahSprite.setPosition(220.f, 360.f);
+        }
+
+        if (!jsTexture.loadFromFile("friends_js.png")) {
+            std::cerr << "friends_js.png 로딩 실패!" << std::endl;
+        }
+        else {
+            jsSprite.setTexture(jsTexture);
+            jsSprite.setScale(0.5f, 0.5f);
+            jsSprite.setPosition(160.f, 180.f);
         }
 
         return true;
@@ -199,6 +225,12 @@ private:
                     else if (sf::FloatRect(29, 294, 140, 45).contains(mousePos)) {
                         showMyeongjun = true;
                     }
+                    else if (sf::FloatRect(222, 292, 137, 46).contains(mousePos)) {
+                        showAhyeon = true;
+                    }
+                    else if (sf::FloatRect(31, 496, 135, 45).contains(mousePos)) {
+                        showJinseo = true;
+                    }
                 }
                 else if (current == "MovingBeggingPlace_bg.png") {
                     if (sf::FloatRect(23, 159, 157, 189).contains(mousePos)) {
@@ -224,6 +256,12 @@ private:
                     else if (sf::FloatRect(29, 294, 140, 45).contains(mousePos)) {
                         showMyeongjun = true;
                     }
+                    else if (sf::FloatRect(222, 292, 137, 46).contains(mousePos)) {
+                        showAhyeon = true;
+                    }
+                    else if (sf::FloatRect(31, 496, 135, 45).contains(mousePos)) {
+                        showJinseo = true;
+                    }
                 }
             }
         }
@@ -243,8 +281,10 @@ private:
         if (current != "MovingBeggingPlace_bg.png" && current != "friends_bg.png") {
             character.draw(window);
         }
-        if (current != "friends_bg.png" && current != "MovingBeggingPlace_bg.png" && showMyeongjun) {
-            window.draw(mjSprite);
+        if (current != "friends_bg.png" && current != "MovingBeggingPlace_bg.png") {
+            if (showMyeongjun) window.draw(mjSprite);
+            if (showAhyeon) window.draw(ahSprite);
+            if (showJinseo) window.draw(jsSprite);
         }
         moneyDisplay.draw(window);
         window.display();
