@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <locale>
+#include <map>
 
 std::wstring formatMoney(int money) {
     std::wstring result;
@@ -15,13 +16,13 @@ std::wstring formatMoney(int money) {
             result.insert(result.begin(), L',');
         }
     }
-    result += L"원";
+    result += L" 골드";
     return result;
 }
 
 class MoneyDisplay {
 private:
-    int money = 0;
+    int money = 500;
     sf::Text text;
     sf::Font font;
 
@@ -34,7 +35,7 @@ public:
         text.setFont(font);
         text.setCharacterSize(20);
         text.setFillColor(sf::Color::Yellow);
-        text.setPosition(50.f, 30.f);
+        text.setPosition(55.f, 26.f);
         text.setString(sf::String(formatMoney(money)));
         return true;
     }
@@ -42,6 +43,24 @@ public:
     void increase() {
         money++;
         text.setString(sf::String(formatMoney(money)));
+    }
+
+    void addMoney(int amount) {
+        money += amount;
+        text.setString(sf::String(formatMoney(money)));
+    }
+
+    bool spendMoney(int amount) {
+        if (money >= amount) {
+            money -= amount;
+            text.setString(sf::String(formatMoney(money)));
+            return true;
+        }
+        return false;
+    }
+
+    int getMoney() const {
+        return money;
     }
 
     void draw(sf::RenderWindow& window) {
@@ -122,13 +141,187 @@ public:
     }
 };
 
+// 부동산 클래스 (첫 번째 파일에서 가져옴)
+class RealEstate {
+public:
+    struct Property {
+        std::string name;
+        int price;
+        int maxInterest;
+        bool owned;
+        sf::FloatRect buttonArea;
+        sf::Text buttonText;
+    };
+
+private:
+    sf::Font font;
+    std::map<std::string, Property> properties;
+    sf::Texture buildingTexture;
+    sf::Sprite buildingSprite;
+
+public:
+    bool init(sf::RenderWindow& window) {
+        if (!font.loadFromFile("NotoSansKR-SemiBold.ttf")) {
+            std::cerr << "폰트 로딩 실패!" << std::endl;
+            return false;
+        }
+
+        if (!buildingTexture.loadFromFile("building_bg.png")) {
+            std::cerr << "building_bg.png 로딩 실패!" << std::endl;
+            return false;
+        }
+
+        buildingSprite.setTexture(buildingTexture);
+        float scaleX = window.getSize().x / static_cast<float>(buildingTexture.getSize().x);
+        float scaleY = window.getSize().y / static_cast<float>(buildingTexture.getSize().y);
+        buildingSprite.setScale(scaleX, scaleY);
+
+        // 부동산 정보 초기화
+        // 8공학관
+        Property eng8;
+        eng8.name = "8공학관";
+        eng8.price = 3000;
+        eng8.maxInterest = 2000;
+        eng8.owned = false;
+        eng8.buttonArea = sf::FloatRect(38, 352, 135, 41);
+        eng8.buttonText.setFont(font);
+        eng8.buttonText.setString(formatMoney(eng8.price));
+        eng8.buttonText.setCharacterSize(14);
+        eng8.buttonText.setFillColor(sf::Color::Black);
+        eng8.buttonText.setPosition(70, 360); // 좌표 내부에 위치
+        properties["8공학관"] = eng8;
+
+        // 학생회관
+        Property student;
+        student.name = "학생회관";
+        student.price = 500;
+        student.maxInterest = 100;
+        student.owned = false;
+        student.buttonArea = sf::FloatRect(234, 352, 135, 41);
+        student.buttonText.setFont(font);
+        student.buttonText.setString(formatMoney(student.price));
+        student.buttonText.setCharacterSize(14);
+        student.buttonText.setFillColor(sf::Color::Black);
+        student.buttonText.setPosition(270, 360); // 좌표 내부에 위치
+        properties["학생회관"] = student;
+
+        // 챌린지하우스
+        Property challenge;
+        challenge.name = "챌린지하우스";
+        challenge.price = 5000;
+        challenge.maxInterest = 4500;
+        challenge.owned = false;
+        challenge.buttonArea = sf::FloatRect(38, 588, 135, 41);
+        challenge.buttonText.setFont(font);
+        challenge.buttonText.setString(formatMoney(challenge.price));
+        challenge.buttonText.setCharacterSize(14);
+        challenge.buttonText.setFillColor(sf::Color::Black);
+        challenge.buttonText.setPosition(70, 605); // 좌표 내부에 위치
+        properties["챌린지하우스"] = challenge;
+
+        // 도서관
+        Property library;
+        library.name = "도서관";
+        library.price = 2500;
+        library.maxInterest = 1800;
+        library.owned = false;
+        library.buttonArea = sf::FloatRect(234, 588, 135, 41);
+        library.buttonText.setFont(font);
+        library.buttonText.setString(formatMoney(library.price));
+        library.buttonText.setCharacterSize(14);
+        library.buttonText.setFillColor(sf::Color::Black);
+        library.buttonText.setPosition(270, 605); // 좌표 내부에 위치
+        properties["도서관"] = library;
+
+        return true;
+    }
+
+    // 소유한 부동산의 총 가치 계산
+    int getTotalPropertyValue() const {
+        int totalValue = 0;
+        for (const auto& pair : properties) {
+            if (pair.second.owned) {
+                totalValue += pair.second.price;
+            }
+        }
+        return totalValue;
+    }
+
+    // 소유한 부동산의 총 이자 계산
+    int getTotalInterest() const {
+        int totalInterest = 0;
+        for (const auto& pair : properties) {
+            if (pair.second.owned) {
+                totalInterest += pair.second.maxInterest;
+            }
+        }
+        return totalInterest;
+    }
+
+    // 소유한 부동산 목록 반환
+    std::vector<std::string> getOwnedProperties() const {
+        std::vector<std::string> ownedList;
+        for (const auto& pair : properties) {
+            if (pair.second.owned) {
+                ownedList.push_back(pair.second.name);
+            }
+        }
+        return ownedList;
+    }
+
+    bool handleClick(sf::Vector2f mousePos, MoneyDisplay& moneyDisplay) {
+        for (auto& pair : properties) {
+            Property& prop = pair.second;
+            if (prop.buttonArea.contains(mousePos)) {
+                // 건물 소유 x시
+                if (!prop.owned) {
+                    // 구매 로직
+                    if (moneyDisplay.spendMoney(prop.price)) {
+                        //건물 소유
+                        prop.owned = true;
+                        prop.buttonText.setString(L"판매하기");
+                        prop.buttonText.setFillColor(sf::Color(255,0,0));
+
+                        std::cout << prop.name << " Purchase completed! " << prop.price << "gold payment" << std::endl;
+                        return true;
+                    } else {
+                        std::cout << "I'm running low on gold!" << std::endl;
+                    }
+                } else {
+                    // 판매 로직
+                    int sellPrice = prop.price + prop.maxInterest;
+                    moneyDisplay.addMoney(sellPrice);
+                    //건물 소유 X시
+                    prop.owned = false;
+                    prop.buttonText.setString(formatMoney(prop.price));
+                    prop.buttonText.setFillColor(sf::Color(0,0,0));
+                    std::cout << prop.name << " Sold out! " << sellPrice << "get gold" << std::endl;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    void draw(sf::RenderWindow& window) {
+        window.draw(buildingSprite);
+
+        // 부동산 버튼 텍스트 그리기
+        for (const auto& pair : properties) {
+            window.draw(pair.second.buttonText);
+        }
+    }
+};
+
 class Game {
 private:
     sf::RenderWindow window;
     MoneyDisplay moneyDisplay;
     Background background;
     Character character;
+    RealEstate realEstate; // 부동산 시스템
 
+    // 친구 캐릭터들 (두 번째 파일에서 가져옴)
     sf::Texture mjTexture;
     sf::Sprite mjSprite;
     bool showMyeongjun = false;
@@ -142,6 +335,12 @@ private:
     bool showJinseo = false;
 
     sf::RectangleShape clickableArea;
+
+    // 자산 표시를 위한 변수
+    sf::Text assetText;
+    sf::Font assetFont;
+    int totalAsset = 0;
+
     std::string lastScene = "bg_playground.png";
 
 public:
@@ -151,7 +350,7 @@ public:
         std::locale::global(std::locale(""));
         std::wcout.imbue(std::locale(""));
 
-        if (!moneyDisplay.init() || !background.init(window) || !character.init())
+        if (!moneyDisplay.init() || !background.init(window) || !character.init() || !realEstate.init(window))
             return false;
 
         clickableArea.setSize({ 180.f, 40.f });
@@ -159,6 +358,7 @@ public:
         clickableArea.setOutlineColor(sf::Color::White);
         clickableArea.setOutlineThickness(2.f);
 
+        // 명준 캐릭터 초기화
         if (!mjTexture.loadFromFile("friends_mj.png")) {
             std::cerr << "friends_mj.png 로딩 실패!" << std::endl;
         }
@@ -168,6 +368,7 @@ public:
             mjSprite.setPosition(100.f, 400.f);
         }
 
+        // 아현 캐릭터 초기화 (두 번째 파일에서 추가)
         if (!ahTexture.loadFromFile("friends_ah.png")) {
             std::cerr << "friends_ah.png 로딩 실패!" << std::endl;
         }
@@ -177,6 +378,7 @@ public:
             ahSprite.setPosition(220.f, 360.f);
         }
 
+        // 진서 캐릭터 초기화 (두 번째 파일에서 추가)
         if (!jsTexture.loadFromFile("friends_js.png")) {
             std::cerr << "friends_js.png 로딩 실패!" << std::endl;
         }
@@ -186,7 +388,44 @@ public:
             jsSprite.setPosition(160.f, 180.f);
         }
 
+        // 자산 표시 초기화
+        if (!assetFont.loadFromFile("NotoSansKR-SemiBold.ttf")) {
+            std::cerr << "폰트 로딩 실패!" << std::endl;
+            return false;
+        }
+        assetText.setFont(assetFont);
+        assetText.setCharacterSize(16);
+        assetText.setFillColor(sf::Color::White);
+        assetText.setPosition(window.getSize().x - 200.f, 10.f);
+        updateTotalAsset();
+
         return true;
+    }
+
+    // 총 자산 계산 및 업데이트
+    void updateTotalAsset() {
+        int baseMoney = moneyDisplay.getMoney();
+
+        // 친구 보너스 계산 (친구당 5%)
+        int friendBonus = 0;
+        int friendCount = 0;
+        if (showMyeongjun) friendCount++;
+        if (showAhyeon) friendCount++;
+        if (showJinseo) friendCount++;
+        friendBonus = static_cast<int>(baseMoney * (friendCount * 0.05));
+
+        // 부동산 가치와 이자 계산
+        int propertyValue = realEstate.getTotalPropertyValue();
+        int propertyInterest = realEstate.getTotalInterest();
+
+        // 총 자산 계산
+        totalAsset = baseMoney + friendBonus + propertyValue + propertyInterest;
+
+        // 텍스트 업데이트
+        std::wstring assetString = L"현재 자산 : " + formatMoney(totalAsset);
+        assetText.setFillColor(sf::Color(100, 250, 50));
+        assetText.setPosition(210.f, 30.f);
+        assetText.setString(assetString);
     }
 
     void run() {
@@ -213,25 +452,55 @@ private:
                 std::wcout << L"[클릭 위치] x: " << static_cast<int>(mousePos.x) << L", y: " << static_cast<int>(mousePos.y) << std::endl;
 
                 std::string current = background.getCurrentFile();
-                if (current != "MovingBeggingPlace_bg.png" && current != "friends_bg.png") {
+
+                // 부동산 화면에서의 클릭 처리 (첫 번째 파일에서 가져옴)
+                if (current == "building_bg.png") {
+                    // 부동산 버튼 클릭 처리
+                    if (realEstate.handleClick(mousePos, moneyDisplay)) {
+                        // 부동산 거래 처리됨
+                        updateTotalAsset(); // 자산 업데이트
+                    }
+                    // X 버튼 클릭 처리 (닫기)
+                    else if (sf::FloatRect(352, 92, 27, 23).contains(mousePos)) {
+                        background.load(lastScene, window);
+                    }
+                }
+                // 하단메뉴 클릭 시 이동
+                else if (current != "MovingBeggingPlace_bg.png" && current != "friends_bg.png") {
                     if (clickableArea.getGlobalBounds().contains(mousePos)) {
                         lastScene = current;
                         background.load("MovingBeggingPlace_bg.png", window);
                     }
+                    //친구
                     else if (sf::FloatRect(13, 570, 181, 39).contains(mousePos)) {
                         lastScene = current;
                         background.load("friends_bg.png", window);
                     }
+                    // 친구 캐릭터 클릭 (두 번째 파일에서 가져옴)
                     else if (sf::FloatRect(29, 294, 140, 45).contains(mousePos)) {
                         showMyeongjun = true;
+                        updateTotalAsset(); // 자산 업데이트
                     }
                     else if (sf::FloatRect(222, 292, 137, 46).contains(mousePos)) {
                         showAhyeon = true;
+                        updateTotalAsset(); // 자산 업데이트
                     }
                     else if (sf::FloatRect(31, 496, 135, 45).contains(mousePos)) {
                         showJinseo = true;
+                        updateTotalAsset(); // 자산 업데이트
+                    }
+                    //knu파워
+                    else if (sf::FloatRect(200, 570, 181, 39).contains(mousePos)) {
+                        lastScene = current;
+                        background.load("KUN power_bg.png", window);
+                    }
+                    // 부동산
+                    else if (sf::FloatRect(15, 621, 181, 39).contains(mousePos)) {
+                        lastScene = current;
+                        background.load("building_bg.png", window);
                     }
                 }
+                //구걸장소이동
                 else if (current == "MovingBeggingPlace_bg.png") {
                     if (sf::FloatRect(23, 159, 157, 189).contains(mousePos)) {
                         background.load("bg_playground.png", window);
@@ -245,7 +514,7 @@ private:
                     else if (sf::FloatRect(208, 436, 156, 185).contains(mousePos)) {
                         background.load("bg_google.png", window);
                     }
-                    else if (sf::FloatRect(350, 92, 28, 23).contains(mousePos)) {
+                    else if (sf::FloatRect(352, 92, 27, 23).contains(mousePos)) {
                         background.load(lastScene, window);
                     }
                 }
@@ -253,14 +522,18 @@ private:
                     if (sf::FloatRect(352, 92, 27, 23).contains(mousePos)) {
                         background.load(lastScene, window);
                     }
+                    // 친구 화면에서도 친구 캐릭터 클릭 가능 (두 번째 파일에서 가져옴)
                     else if (sf::FloatRect(29, 294, 140, 45).contains(mousePos)) {
                         showMyeongjun = true;
+                        updateTotalAsset(); // 자산 업데이트
                     }
                     else if (sf::FloatRect(222, 292, 137, 46).contains(mousePos)) {
                         showAhyeon = true;
+                        updateTotalAsset(); // 자산 업데이트
                     }
                     else if (sf::FloatRect(31, 496, 135, 45).contains(mousePos)) {
                         showJinseo = true;
+                        updateTotalAsset(); // 자산 업데이트
                     }
                 }
             }
@@ -269,24 +542,36 @@ private:
 
     void update() {
         std::string current = background.getCurrentFile();
-        if (current != "MovingBeggingPlace_bg.png" && current != "friends_bg.png") {
+        if (current != "MovingBeggingPlace_bg.png" && current != "friends_bg.png" && current != "building_bg.png") {
             character.update();
         }
+
+        // 매 프레임마다 자산 업데이트
+        updateTotalAsset();
     }
 
     void render() {
         window.clear();
-        background.draw(window);
         std::string current = background.getCurrentFile();
-        if (current != "MovingBeggingPlace_bg.png" && current != "friends_bg.png") {
-            character.draw(window);
+
+        if (current == "building_bg.png") {
+            realEstate.draw(window);
+        } else {
+            background.draw(window);
+            if (current != "MovingBeggingPlace_bg.png" && current != "friends_bg.png" && current != "building_bg.png") {
+                character.draw(window);
+            }
+            // 친구 캐릭터들 렌더링 (두 번째 파일에서 가져옴)
+            if (current != "friends_bg.png" && current != "MovingBeggingPlace_bg.png" && current != "building_bg.png") {
+                if (showMyeongjun) window.draw(mjSprite);
+                if (showAhyeon) window.draw(ahSprite);
+                if (showJinseo) window.draw(jsSprite);
+            }
         }
-        if (current != "friends_bg.png" && current != "MovingBeggingPlace_bg.png") {
-            if (showMyeongjun) window.draw(mjSprite);
-            if (showAhyeon) window.draw(ahSprite);
-            if (showJinseo) window.draw(jsSprite);
-        }
+
         moneyDisplay.draw(window);
+        // 자산 정보 표시
+        window.draw(assetText);
         window.display();
     }
 };
