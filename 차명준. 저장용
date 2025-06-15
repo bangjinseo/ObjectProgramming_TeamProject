@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <locale>
+#include <map>
 
 std::wstring formatMoney(int money) {
     std::wstring result;
@@ -15,33 +16,51 @@ std::wstring formatMoney(int money) {
             result.insert(result.begin(), L',');
         }
     }
-    result += L"원";
+    result += L" 골드";
     return result;
 }
 
 class MoneyDisplay {
 private:
-    int money = 0;
+    int money = 500;
     sf::Text text;
     sf::Font font;
 
 public:
     bool init() {
         if (!font.loadFromFile("NotoSansKR-SemiBold.ttf")) {
-            std::cerr << "폼트 로딩 실패!" << std::endl;
+            std::cerr << "폰트 로딩 실패!" << std::endl;
             return false;
         }
         text.setFont(font);
         text.setCharacterSize(20);
         text.setFillColor(sf::Color::Yellow);
-        text.setPosition(50.f, 30.f);
+        text.setPosition(55.f, 26.f);
         text.setString(sf::String(formatMoney(money)));
         return true;
     }
 
-    void increase() {
-        money++;
+    void increase(int amount = 1) {
+        money += amount;
         text.setString(sf::String(formatMoney(money)));
+    }
+
+    void addMoney(int amount) {
+        money += amount;
+        text.setString(sf::String(formatMoney(money)));
+    }
+
+    bool spendMoney(int amount) {
+        if (money >= amount) {
+            money -= amount;
+            text.setString(sf::String(formatMoney(money)));
+            return true;
+        }
+        return false;
+    }
+
+    int getMoney() const {
+        return money;
     }
 
     void draw(sf::RenderWindow& window) {
@@ -94,8 +113,14 @@ private:
 public:
     bool init() {
         textures.resize(2);
-        if (!textures[0].loadFromFile("kn_beggar1.png")) return false;
-        if (!textures[1].loadFromFile("kn_beggar2.png")) return false;
+        if (!textures[0].loadFromFile("kn_beggar1.png")) {
+            std::cerr << "kn_beggar1.png 로딩 실패!" << std::endl;
+            return false;
+        }
+        if (!textures[1].loadFromFile("kn_beggar2.png")) {
+            std::cerr << "kn_beggar2.png 로딩 실패!" << std::endl;
+            return false;
+        }
 
         sprite.setTexture(textures[0]);
         sprite.setScale(0.6f, 0.6f);
@@ -116,33 +141,326 @@ public:
     }
 };
 
-class Game {
+class RealEstate {
+public:
+    struct Property {
+        std::string name;
+        int price;
+        int maxInterest;
+        bool owned;
+        sf::FloatRect buttonArea;
+        sf::Text buttonText;
+    };
+
 private:
-    sf::RenderWindow window;
-    MoneyDisplay moneyDisplay;
-    Background background;
-    Character character;
+    sf::Font font;
+    std::map<std::string, Property> properties;
+    sf::Texture buildingTexture;
+    sf::Sprite buildingSprite;
 
-    sf::Texture mjTexture, ahTexture, jsTexture;
-    sf::Sprite mjSprite, ahSprite, jsSprite;
-    bool showMyeongjun = false, showAhyeon = false, showJinseo = false;
+public:
+    bool init(sf::RenderWindow& window) {
+        if (!font.loadFromFile("NotoSansKR-SemiBold.ttf")) {
+            std::cerr << "폰트 로딩 실패!" << std::endl;
+            return false;
+        }
 
-    sf::RectangleShape clickableArea;
-    std::string lastScene = "bg_playground.png";
+        if (!buildingTexture.loadFromFile("building_bg.png")) {
+            std::cerr << "building_bg.png 로딩 실패!" << std::endl;
+            return false;
+        }
 
+        buildingSprite.setTexture(buildingTexture);
+        float scaleX = window.getSize().x / static_cast<float>(buildingTexture.getSize().x);
+        float scaleY = window.getSize().y / static_cast<float>(buildingTexture.getSize().y);
+        buildingSprite.setScale(scaleX, scaleY);
+
+        // 부동산 정보 초기화
+        Property eng8;
+        eng8.name = "8공학관";
+        eng8.price = 3000;
+        eng8.maxInterest = 2000;
+        eng8.owned = false;
+        eng8.buttonArea = sf::FloatRect(38, 352, 135, 41);
+        eng8.buttonText.setFont(font);
+        eng8.buttonText.setString(formatMoney(eng8.price));
+        eng8.buttonText.setCharacterSize(14);
+        eng8.buttonText.setFillColor(sf::Color::Black);
+        eng8.buttonText.setPosition(70, 360);
+        properties["8공학관"] = eng8;
+
+        Property student;
+        student.name = "학생회관";
+        student.price = 500;
+        student.maxInterest = 100;
+        student.owned = false;
+        student.buttonArea = sf::FloatRect(234, 352, 135, 41);
+        student.buttonText.setFont(font);
+        student.buttonText.setString(formatMoney(student.price));
+        student.buttonText.setCharacterSize(14);
+        student.buttonText.setFillColor(sf::Color::Black);
+        student.buttonText.setPosition(270, 360);
+        properties["학생회관"] = student;
+
+        Property challenge;
+        challenge.name = "챌린지하우스";
+        challenge.price = 5000;
+        challenge.maxInterest = 4500;
+        challenge.owned = false;
+        challenge.buttonArea = sf::FloatRect(38, 588, 135, 41);
+        challenge.buttonText.setFont(font);
+        challenge.buttonText.setString(formatMoney(challenge.price));
+        challenge.buttonText.setCharacterSize(14);
+        challenge.buttonText.setFillColor(sf::Color::Black);
+        challenge.buttonText.setPosition(70, 605);
+        properties["챌린지하우스"] = challenge;
+
+        Property library;
+        library.name = "도서관";
+        library.price = 2500;
+        library.maxInterest = 1800;
+        library.owned = false;
+        library.buttonArea = sf::FloatRect(234, 588, 135, 41);
+        library.buttonText.setFont(font);
+        library.buttonText.setString(formatMoney(library.price));
+        library.buttonText.setCharacterSize(14);
+        library.buttonText.setFillColor(sf::Color::Black);
+        library.buttonText.setPosition(270, 605);
+        properties["도서관"] = library;
+
+        return true;
+    }
+
+    int getTotalPropertyValue() const {
+        int totalValue = 0;
+        for (const auto& pair : properties) {
+            if (pair.second.owned) {
+                totalValue += pair.second.price;
+            }
+        }
+        return totalValue;
+    }
+
+    int getTotalInterest() const {
+        int totalInterest = 0;
+        for (const auto& pair : properties) {
+            if (pair.second.owned) {
+                totalInterest += pair.second.maxInterest;
+            }
+        }
+        return totalInterest;
+    }
+
+    int getOwnedPropertyCount() const {
+        int count = 0;
+        for (const auto& pair : properties) {
+            if (pair.second.owned) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    std::vector<std::string> getOwnedProperties() const {
+        std::vector<std::string> ownedList;
+        for (const auto& pair : properties) {
+            if (pair.second.owned) {
+                ownedList.push_back(pair.second.name);
+            }
+        }
+        return ownedList;
+    }
+
+    bool handleClick(sf::Vector2f mousePos, MoneyDisplay& moneyDisplay) {
+        for (auto& pair : properties) {
+            Property& prop = pair.second;
+            if (prop.buttonArea.contains(mousePos)) {
+                if (!prop.owned) {
+                    if (moneyDisplay.spendMoney(prop.price)) {
+                        prop.owned = true;
+                        prop.buttonText.setString(L"판매하기");
+                        prop.buttonText.setFillColor(sf::Color(255, 0, 0));
+                        std::cout << prop.name << " 구매 완료! " << prop.price << "골드 지불" << std::endl;
+                        return true;
+                    }
+                    else {
+                        std::cout << "골드가 부족합니다!" << std::endl;
+                    }
+                }
+                else {
+                    int sellPrice = prop.price + prop.maxInterest;
+                    moneyDisplay.addMoney(sellPrice);
+                    prop.owned = false;
+                    prop.buttonText.setString(formatMoney(prop.price));
+                    prop.buttonText.setFillColor(sf::Color(0, 0, 0));
+                    std::cout << prop.name << " 판매 완료! " << sellPrice << "골드 획득" << std::endl;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    void draw(sf::RenderWindow& window) {
+        window.draw(buildingSprite);
+        for (const auto& pair : properties) {
+            window.draw(pair.second.buttonText);
+        }
+    }
+};
+
+class KNUPowerSystem {
+private:
+    sf::Font font;
+    sf::Texture knuTexture;
+    sf::Sprite knuSprite;
+    sf::Sprite knuCharSprite;
+    bool showKnuChar = false;
+
+    int level = 1;
+    int goldPerClick = 1;
+    int levelUpCost = 100;
+
+    sf::RectangleShape levelUpButton;
+    sf::Text levelUpText;
+    sf::Text levelText;
+    sf::Text goldLevelText;
+    sf::Text propertyLevelText;
+    sf::Text friendBonusText;
+    sf::Text friendsText;
+
+public:
+    bool init(sf::RenderWindow& window) {
+        if (!font.loadFromFile("NotoSansKR-SemiBold.ttf")) {
+            std::cerr << "폰트 로딩 실패!" << std::endl;
+            return false;
+        }
+
+        if (!knuTexture.loadFromFile("KUN power_bg.png")) {
+            std::cerr << "KUN power_bg.png 로딩 실패!" << std::endl;
+            return false;
+        }
+
+        knuSprite.setTexture(knuTexture);
+        float scaleX = window.getSize().x / static_cast<float>(knuTexture.getSize().x);
+        float scaleY = window.getSize().y / static_cast<float>(knuTexture.getSize().y);
+        knuSprite.setScale(scaleX, scaleY);
+
+        knuCharSprite.setScale(0.4f, 0.4f);
+        knuCharSprite.setPosition(142.f, 498.f);
+
+        levelUpButton.setSize(sf::Vector2f(140.f, 27.f));
+        levelUpButton.setPosition(220.f, 235.f);
+        levelUpButton.setFillColor(sf::Color(255, 195, 91));
+        levelUpButton.setOutlineColor(sf::Color(255, 195, 91));
+        levelUpButton.setOutlineThickness(2.f);
+
+        levelUpText.setFont(font);
+        levelUpText.setString(L"레벨업 (" + formatMoney(levelUpCost) + L")");
+        levelUpText.setCharacterSize(15);
+        levelUpText.setFillColor(sf::Color::Black);
+        levelUpText.setPosition(235.f, 243.f);
+
+        levelText.setFont(font);
+        levelText.setString(L"Lv" + std::to_wstring(level));
+        levelText.setCharacterSize(24);
+        levelText.setFillColor(sf::Color(88, 74, 40));
+        levelText.setPosition(195.f, 190.f);
+
+        goldLevelText.setFont(font);
+        goldLevelText.setString(L" " + std::to_wstring(goldPerClick));
+        goldLevelText.setCharacterSize(18);
+        goldLevelText.setFillColor(sf::Color(48, 42, 27));
+        goldLevelText.setPosition(140.f, 305.f);
+
+        propertyLevelText.setFont(font);
+        propertyLevelText.setString(L"");
+        propertyLevelText.setCharacterSize(18);
+        propertyLevelText.setFillColor(sf::Color(48, 42, 27));
+        propertyLevelText.setPosition(157.f, 355.f);
+
+        friendsText.setFont(font);
+        friendsText.setString(L"친구 20레벨 달성 보너스");
+        friendsText.setCharacterSize(20);
+        friendsText.setFillColor(sf::Color::Black);
+        friendsText.setPosition(100.f, 970.f);
+
+        return true;
+    }
+
+    bool tryLevelUp(MoneyDisplay& moneyDisplay) {
+        if (moneyDisplay.spendMoney(levelUpCost)) {
+            level++;
+            goldPerClick = level;
+            levelUpCost = 100 * level;
+
+            levelText.setString(L"Lv" + std::to_wstring(level));
+            levelUpText.setString(L"레벨업 (" + formatMoney(levelUpCost) + L")");
+            goldLevelText.setString(L" " + std::to_wstring(goldPerClick));
+
+            return true;
+        }
+        return false;
+    }
+
+    int getGoldPerClick(bool showMyeongjun, bool showAhyeon, bool showJinseo, int propertyCount) {
+        int baseGold = goldPerClick;
+
+        int friendCount = 0;
+        if (showMyeongjun) friendCount++;
+        if (showAhyeon) friendCount++;
+        if (showJinseo) friendCount++;
+
+        int friendBonus = baseGold * friendCount * 0.1;
+        int propertyBonus = baseGold * propertyCount * 0.05;
+
+        return baseGold + friendBonus + propertyBonus;
+    }
+
+    void updatePropertyBonus(int propertyCount) {
+        int propertyBonus = goldPerClick * propertyCount * 0.05;
+        propertyLevelText.setString(L" " + std::to_wstring(propertyBonus));
+    }
+
+    bool handleClick(sf::Vector2f mousePos, MoneyDisplay& moneyDisplay) {
+        if (levelUpButton.getGlobalBounds().contains(mousePos)) {
+            return tryLevelUp(moneyDisplay);
+        }
+        return false;
+    }
+
+    int getLevel() const {
+        return level;
+    }
+
+    int getGoldPerClick() const {
+        return goldPerClick;
+    }
+
+    void draw(sf::RenderWindow& window) {
+        window.draw(knuSprite);
+        window.draw(knuCharSprite);
+        window.draw(levelUpButton);
+        window.draw(levelUpText);
+        window.draw(levelText);
+        window.draw(goldLevelText);
+        window.draw(propertyLevelText);
+        window.draw(friendsText);
+    }
+};
+
+class FriendSystem {
+private:
     sf::Font friendFont;
     sf::Text friendText1, friendText2, friendText3;
 
 public:
-    Game() : window(sf::VideoMode(405, 720), "Homeless Character Animation") {}
-
     bool init() {
-        std::locale::global(std::locale(""));
-        std::wcout.imbue(std::locale(""));
+        if (!friendFont.loadFromFile("NotoSansKR-SemiBold.ttf")) {
+            return false;
+        }
 
-        if (!moneyDisplay.init() || !background.init(window) || !character.init()) return false;
-        if (!friendFont.loadFromFile("NotoSansKR-SemiBold.ttf")) return false;
-
+        // 명준 친구 텍스트
         friendText1.setFont(friendFont);
         friendText1.setString(L"친구하기");
         friendText1.setCharacterSize(28);
@@ -151,6 +469,7 @@ public:
         friendText1.setOrigin(rect1.left + rect1.width / 2, rect1.top + rect1.height / 2);
         friendText1.setPosition(29.f + 70.f, 294.f + 21.5f);
 
+        // 아현 친구 텍스트
         friendText2.setFont(friendFont);
         friendText2.setString(L"친구하기");
         friendText2.setCharacterSize(28);
@@ -159,6 +478,7 @@ public:
         friendText2.setOrigin(rect2.left + rect2.width / 2, rect2.top + rect2.height / 2);
         friendText2.setPosition(221.f + 71.f, 292.f + 23.5f);
 
+        // 진서 친구 텍스트
         friendText3.setFont(friendFont);
         friendText3.setString(L"친구하기");
         friendText3.setCharacterSize(28);
@@ -167,12 +487,84 @@ public:
         friendText3.setOrigin(rect3.left + rect3.width / 2, rect3.top + rect3.height / 2);
         friendText3.setPosition(27.f + 70.5f, 496.f + 23.5f);
 
+        return true;
+    }
+
+    void setFriendStatus(int friendIndex, bool isFriend) {
+        switch (friendIndex) {
+        case 1:
+            friendText1.setString(isFriend ? L"내 친구" : L"친구하기");
+            break;
+        case 2:
+            friendText2.setString(isFriend ? L"내 친구" : L"친구하기");
+            break;
+        case 3:
+            friendText3.setString(isFriend ? L"내 친구" : L"친구하기");
+            break;
+        }
+    }
+
+    void draw(sf::RenderWindow& window) {
+        window.draw(friendText1);
+        window.draw(friendText2);
+        window.draw(friendText3);
+    }
+};
+
+class Game {
+private:
+    sf::RenderWindow window;
+    MoneyDisplay moneyDisplay;
+    Background background;
+    Character character;
+    RealEstate realEstate;
+    KNUPowerSystem knuPowerSystem;
+    FriendSystem friendSystem;
+
+    // 친구 캐릭터들
+    sf::Texture mjTexture, ahTexture, jsTexture;
+    sf::Sprite mjSprite, ahSprite, jsSprite;
+    bool showMyeongjun = false, showAhyeon = false, showJinseo = false;
+
+    sf::RectangleShape clickableArea;
+
+    // 자산 표시
+    sf::Text assetText;
+    sf::Font assetFont;
+    int totalAsset = 0;
+
+    std::string lastScene = "bg_playground.png";
+    bool shouldShowCharacter = true;
+
+    bool isCharacterBackground(const std::string& background) {
+        return (background == "bg_dujeongStaion.png" ||
+            background == "bg_google.png" ||
+            background == "bg_playground.png" ||
+            background == "bg_seouStation.png");
+    }
+
+public:
+    Game() : window(sf::VideoMode(405, 720), "통합 게임 시스템") {}
+
+    bool init() {
+        std::locale::global(std::locale(""));
+        std::wcout.imbue(std::locale(""));
+
+        if (!moneyDisplay.init() || !background.init(window) || !character.init() ||
+            !realEstate.init(window) || !knuPowerSystem.init(window) || !friendSystem.init())
+            return false;
+
         clickableArea.setSize({ 180.f, 40.f });
         clickableArea.setPosition(203.f, 621.f);
+        clickableArea.setOutlineColor(sf::Color::White);
+        clickableArea.setOutlineThickness(2.f);
 
-        mjTexture.loadFromFile("friends_mj.png");
-        ahTexture.loadFromFile("friends_ah.png");
-        jsTexture.loadFromFile("friends_js.png");
+        // 친구 캐릭터 텍스처 로딩
+        if (!mjTexture.loadFromFile("friends_mj.png") ||
+            !ahTexture.loadFromFile("friends_ah.png") ||
+            !jsTexture.loadFromFile("friends_js.png")) {
+            std::cerr << "친구 캐릭터 텍스처 로딩 실패!" << std::endl;
+        }
 
         mjSprite.setTexture(mjTexture);
         ahSprite.setTexture(ahTexture);
@@ -186,7 +578,43 @@ public:
         ahSprite.setPosition(220.f, 360.f);
         jsSprite.setPosition(160.f, 180.f);
 
+        // 자산 표시 초기화
+        if (!assetFont.loadFromFile("NotoSansKR-SemiBold.ttf")) {
+            std::cerr << "자산 폰트 로딩 실패!" << std::endl;
+            return false;
+        }
+        assetText.setFont(assetFont);
+        assetText.setCharacterSize(16);
+        assetText.setFillColor(sf::Color::White);
+        assetText.setPosition(window.getSize().x - 200.f, 10.f);
+        updateTotalAsset();
+
         return true;
+    }
+
+    void updateTotalAsset() {
+        int baseMoney = moneyDisplay.getMoney();
+
+        // 친구 보너스 계산
+        int friendBonus = 0;
+        int friendCount = 0;
+        if (showMyeongjun) friendCount++;
+        if (showAhyeon) friendCount++;
+        if (showJinseo) friendCount++;
+        friendBonus = static_cast<int>(baseMoney * (friendCount * 0.05));
+
+        // 부동산 가치와 이자 계산
+        int propertyValue = realEstate.getTotalPropertyValue();
+        int propertyInterest = realEstate.getTotalInterest();
+
+        // 총 자산 계산
+        totalAsset = baseMoney + friendBonus + propertyValue + propertyInterest;
+
+        // 텍스트 업데이트
+        std::wstring assetString = L"현재 자산 : " + formatMoney(totalAsset);
+        assetText.setFillColor(sf::Color(100, 250, 50));
+        assetText.setPosition(210.f, 30.f);
+        assetText.setString(assetString);
     }
 
     void run() {
@@ -201,56 +629,125 @@ private:
     void handleEvents() {
         sf::Event event;
         while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed) window.close();
+            if (event.type == sf::Event::Closed)
+                window.close();
 
-            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space)
-                moneyDisplay.increase();
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space) {
+                int goldIncrease = knuPowerSystem.getGoldPerClick(showMyeongjun, showAhyeon, showJinseo, realEstate.getOwnedPropertyCount());
+                moneyDisplay.increase(goldIncrease);
+            }
 
             if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 sf::Vector2f mousePos = window.mapPixelToCoords({ event.mouseButton.x, event.mouseButton.y });
-                std::wcout << L"[클릭 위치] x: " << (int)mousePos.x << L", y: " << (int)mousePos.y << std::endl;
+                std::wcout << L"[클릭 위치] x: " << static_cast<int>(mousePos.x) << L", y: " << static_cast<int>(mousePos.y) << std::endl;
 
                 std::string current = background.getCurrentFile();
 
-                if (current == "friends_bg.png") {
+                // KNU 파워 화면
+                if (current == "KUN power_bg.png") {
+                    if (knuPowerSystem.handleClick(mousePos, moneyDisplay)) {
+                        updateTotalAsset();
+                    }
+                    else if (sf::FloatRect(352, 92, 27, 23).contains(mousePos)) {
+                        background.load(lastScene, window);
+                        shouldShowCharacter = isCharacterBackground(lastScene);
+                    }
+                }
+                // 부동산 화면
+                else if (current == "building_bg.png") {
+                    if (realEstate.handleClick(mousePos, moneyDisplay)) {
+                        knuPowerSystem.updatePropertyBonus(realEstate.getOwnedPropertyCount());
+                        updateTotalAsset();
+                    }
+                    else if (sf::FloatRect(352, 92, 27, 23).contains(mousePos)) {
+                        background.load(lastScene, window);
+                        shouldShowCharacter = isCharacterBackground(lastScene);
+                    }
+                }
+                // 친구 화면
+                else if (current == "friends_bg.png") {
                     if (sf::FloatRect(29, 294, 140, 45).contains(mousePos)) {
-                        friendText1.setString(L"내 친구");
                         showMyeongjun = true;
+                        friendSystem.setFriendStatus(1, true);
+                        updateTotalAsset();
                     }
                     else if (sf::FloatRect(222, 292, 137, 46).contains(mousePos)) {
-                        friendText2.setString(L"내 친구");
                         showAhyeon = true;
+                        friendSystem.setFriendStatus(2, true);
+                        updateTotalAsset();
                     }
                     else if (sf::FloatRect(31, 496, 135, 45).contains(mousePos)) {
-                        friendText3.setString(L"내 친구");
                         showJinseo = true;
+                        friendSystem.setFriendStatus(3, true);
+                        updateTotalAsset();
                     }
                     else if (sf::FloatRect(354, 92, 27, 23).contains(mousePos)) {
                         background.load(lastScene, window);
+                        shouldShowCharacter = isCharacterBackground(lastScene);
                     }
                 }
-
-                if (current != "MovingBeggingPlace_bg.png" && current != "friends_bg.png") {
+                // 구걸장소 이동 화면
+                else if (current == "MovingBeggingPlace_bg.png") {
+                    if (sf::FloatRect(23, 159, 157, 189).contains(mousePos)) {
+                        background.load("bg_playground.png", window);
+                        shouldShowCharacter = true;
+                    }
+                    else if (sf::FloatRect(209, 159, 155, 192).contains(mousePos)) {
+                        background.load("bg_dujeongStaion.png", window);
+                        shouldShowCharacter = true;
+                    }
+                    else if (sf::FloatRect(24, 438, 157, 187).contains(mousePos)) {
+                        background.load("bg_seouStation.png", window);
+                        shouldShowCharacter = true;
+                    }
+                    else if (sf::FloatRect(208, 436, 156, 185).contains(mousePos)) {
+                        background.load("bg_google.png", window);
+                        shouldShowCharacter = true;
+                    }
+                    else if (sf::FloatRect(352, 92, 27, 23).contains(mousePos)) {
+                        background.load(lastScene, window);
+                        shouldShowCharacter = isCharacterBackground(lastScene);
+                    }
+                }
+                // 메인 게임 화면들
+                else if (current != "MovingBeggingPlace_bg.png" && current != "friends_bg.png") {
+                    // 하단 메뉴 클릭
                     if (clickableArea.getGlobalBounds().contains(mousePos)) {
                         lastScene = current;
                         background.load("MovingBeggingPlace_bg.png", window);
+                        shouldShowCharacter = false;
                     }
+                    // 친구 메뉴
                     else if (sf::FloatRect(13, 570, 181, 39).contains(mousePos)) {
                         lastScene = current;
                         background.load("friends_bg.png", window);
+                        shouldShowCharacter = false;
                     }
-                }
-                else if (current == "MovingBeggingPlace_bg.png") {
-                    if (sf::FloatRect(23, 159, 157, 189).contains(mousePos))
-                        background.load("bg_playground.png", window);
-                    else if (sf::FloatRect(209, 159, 155, 192).contains(mousePos))
-                        background.load("bg_dujeongStaion.png", window);
-                    else if (sf::FloatRect(24, 438, 157, 187).contains(mousePos))
-                        background.load("bg_seouStation.png", window);
-                    else if (sf::FloatRect(208, 436, 156, 185).contains(mousePos))
-                        background.load("bg_google.png", window);
-                    else if (sf::FloatRect(354, 92, 27, 23).contains(mousePos))
-                        background.load(lastScene, window);
+                    // KNU 파워 메뉴
+                    else if (sf::FloatRect(200, 570, 181, 39).contains(mousePos)) {
+                        lastScene = current;
+                        background.load("KUN power_bg.png", window);
+                        shouldShowCharacter = false;
+                    }
+                    // 부동산 메뉴
+                    else if (sf::FloatRect(15, 621, 181, 39).contains(mousePos)) {
+                        lastScene = current;
+                        background.load("building_bg.png", window);
+                        shouldShowCharacter = false;
+                    }
+                    // 친구 캐릭터 직접 클릭 (메인 화면에서)
+                    else if (sf::FloatRect(29, 294, 140, 45).contains(mousePos)) {
+                        showMyeongjun = true;
+                        updateTotalAsset();
+                    }
+                    else if (sf::FloatRect(222, 292, 137, 46).contains(mousePos)) {
+                        showAhyeon = true;
+                        updateTotalAsset();
+                    }
+                    else if (sf::FloatRect(31, 496, 135, 45).contains(mousePos)) {
+                        showJinseo = true;
+                        updateTotalAsset();
+                    }
                 }
             }
         }
@@ -258,38 +755,54 @@ private:
 
     void update() {
         std::string current = background.getCurrentFile();
-        if (current != "MovingBeggingPlace_bg.png" && current != "friends_bg.png")
+
+        if (shouldShowCharacter && isCharacterBackground(current)) {
             character.update();
+        }
+
+        updateTotalAsset();
+        knuPowerSystem.updatePropertyBonus(realEstate.getOwnedPropertyCount());
     }
 
     void render() {
         window.clear();
-        background.draw(window);
-
         std::string current = background.getCurrentFile();
-        if (current != "MovingBeggingPlace_bg.png" && current != "friends_bg.png")
-            character.draw(window);
 
-        if ((current == "bg_playground.png" || current == "bg_dujeongStaion.png" || current == "bg_seouStation.png" || current == "bg_google.png")) {
-            if (showMyeongjun) window.draw(mjSprite);
-            if (showAhyeon) window.draw(ahSprite);
-            if (showJinseo) window.draw(jsSprite);
+        if (current == "building_bg.png") {
+            realEstate.draw(window);
         }
+        else if (current == "KUN power_bg.png") {
+            knuPowerSystem.draw(window);
+        }
+        else if (current == "friends_bg.png") {
+            background.draw(window);
+            friendSystem.draw(window);
+        }
+        else {
+            background.draw(window);
 
-        if (current == "friends_bg.png") {
-            window.draw(friendText1);
-            window.draw(friendText2);
-            window.draw(friendText3);
+            if (shouldShowCharacter && isCharacterBackground(current)) {
+                character.draw(window);
+
+                // 친구 캐릭터들 렌더링
+                if (showMyeongjun) window.draw(mjSprite);
+                if (showAhyeon) window.draw(ahSprite);
+                if (showJinseo) window.draw(jsSprite);
+            }
         }
 
         moneyDisplay.draw(window);
+        window.draw(assetText);
         window.display();
     }
 };
 
 int main() {
     Game game;
-    if (!game.init()) return -1;
+    if (!game.init()) {
+        std::cerr << "게임 초기화 실패!" << std::endl;
+        return -1;
+    }
     game.run();
     return 0;
 }
