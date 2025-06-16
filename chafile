@@ -22,7 +22,7 @@ std::wstring formatMoney(int money) {
 
 class MoneyDisplay {
 private:
-    int money = 50000000;
+    int money = 50000000; // 첫 번째 코드의 시작 금액 사용
     sf::Text text;
     sf::Font font;
 
@@ -160,7 +160,6 @@ private:
     int totalSalesProfit = 0; // 역대 부동산 판매 수익 누적
 
 public:
-    // getTotalSalesProfit 함수 추가
     int getTotalSalesProfit() const {
         return totalSalesProfit;
     }
@@ -294,7 +293,7 @@ public:
                     prop.buttonText.setFillColor(sf::Color(0, 0, 0));
 
                     std::cout << prop.name << " 판매 완료! " << sellPrice << "골드 획득 (수익: " << profit << "골드)" << std::endl;
-                    std::cout << "💰 역대 부동산 판매 총 수익: " << totalSalesProfit << "골드" << std::endl;
+                    std::cout << " 역대 부동산 판매 총 수익: " << totalSalesProfit << "골드" << std::endl;
                     return true;
                 }
             }
@@ -414,7 +413,6 @@ public:
 
             levelText.setString(L"Lv" + std::to_wstring(level));
             levelUpText.setString(L"레벨업 (" + formatMoney(levelUpCost) + L")");
-            // goldLevelText 업데이트 제거 (별도 함수에서 처리)
 
             return true;
         }
@@ -426,9 +424,9 @@ public:
         if (friendLevel >= 20) {
             double bonusRate = 0.0;
             switch (friendIndex) {
-                case 0: bonusRate = 0.001; break; // 명준: 0.1%
-                case 1: bonusRate = 0.003; break; // 아현: 0.3%
-                case 2: bonusRate = 0.005; break; // 진서: 0.5%
+            case 0: bonusRate = 0.001; break; // 명준: 0.1
+            case 1: bonusRate = 0.003; break; // 아현: 0.3%
+            case 2: bonusRate = 0.005; break; // 진서: 0.5%
             }
             return static_cast<int>(currentGold * bonusRate);
         }
@@ -464,7 +462,8 @@ public:
             int myeongjunBonus = calculateIndividualFriendBonus(currentGold, friend1Level, 0);
             std::wstring myeongjunText = formatMoney(myeongjunBonus);
             myeongjunBonusText.setString(myeongjunText);
-        } else {
+        }
+        else {
             myeongjunBonusText.setString(L"");
         }
 
@@ -473,7 +472,8 @@ public:
             int ahyeonBonus = calculateIndividualFriendBonus(currentGold, friend2Level, 1);
             std::wstring ahyeonText = formatMoney(ahyeonBonus);
             ahyeonBonusText.setString(ahyeonText);
-        } else {
+        }
+        else {
             ahyeonBonusText.setString(L"");
         }
 
@@ -482,7 +482,8 @@ public:
             int jinseoBonus = calculateIndividualFriendBonus(currentGold, friend3Level, 2);
             std::wstring jinseoText = formatMoney(jinseoBonus);
             jinseoBonusText.setString(jinseoText);
-        } else {
+        }
+        else {
             jinseoBonusText.setString(L"");
         }
     }
@@ -701,8 +702,8 @@ public:
                             else if (i == 1) bonusRate = "0.3%";
                             else if (i == 2) bonusRate = "0.5%";
 
-                            std::cout << "🎉 축하합니다! " << friends[i].name << "이(가) 20레벨에 달성했습니다!" << std::endl;
-                            std::cout << "💰 " << friends[i].name << "의 " << bonusRate << " 보너스가 활성화됩니다!" << std::endl;
+                            std::cout << " 축하합니다! " << friends[i].name << "이(가) 20레벨에 달성했습니다!" << std::endl;
+                            std::cout << " " << friends[i].name << "의 " << bonusRate << " 보너스가 활성화됩니다!" << std::endl;
                         }
 
                         return true;
@@ -725,7 +726,8 @@ public:
             // 20레벨 이상이면 색상 변경
             if (friends[friendIndex].level >= 20) {
                 friends[friendIndex].displayText.setFillColor(sf::Color(255, 215, 0)); // 골드 색상
-            } else {
+            }
+            else {
                 friends[friendIndex].displayText.setFillColor(sf::Color::Blue);
             }
 
@@ -789,6 +791,16 @@ public:
         return totalIncome;
     }
 
+    int getOwnedFriendCount() const {
+        int count = 0;
+        for (const auto& friendObj : friends) {
+            if (friendObj.owned) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     void printFriendInfo() const {
         std::cout << "\n=== 친구 정보 (차등 보너스율) ===" << std::endl;
         for (size_t i = 0; i < friends.size(); i++) {
@@ -803,8 +815,9 @@ public:
                     << ", 레벨업 비용: " << friends[i].levelUpCost << "골드";
 
                 if (friends[i].level >= 20) {
-                    std::cout << " [🏆 20레벨 달성! " << bonusRate << " 보너스 활성화]";
-                } else {
+                    std::cout << " [ 20레벨 달성! " << bonusRate << " 보너스 활성화]";
+                }
+                else {
                     std::cout << " [20레벨 달성 시 " << bonusRate << " 보너스]";
                 }
                 std::cout << std::endl;
@@ -832,6 +845,431 @@ public:
     }
 };
 
+class AchievementSystem {
+private:
+    sf::Texture medalTexture;
+    sf::Sprite medalSprite;
+    sf::Texture rewardButtonTexture;
+    sf::Sprite rewardButtonSprite;
+
+    // 업적 상태 (각 카테고리별 5개씩)
+    std::vector<bool> clickAchievements;    // 클릭 업적
+    std::vector<bool> goldAchievements;     // 골드 업적  
+    std::vector<bool> graduationAchievements; // 졸업 업적
+    std::vector<bool> beggarAchievements;   // 구걸 업적
+    std::vector<bool> blueDrinkAchievements; // 파란 드링크 사용 업적
+    std::vector<bool> redDrinkAchievements;  // 빨간 드링크 사용 업적
+
+    // 업적 조건
+    std::vector<int> clickTargets = { 10, 100, 1000, 10000, 100000 };
+    std::vector<int> goldTargets = { 10, 100, 1000, 10000, 100000 };
+    std::vector<int> graduationTargets = { 10, 20, 100, 200, 250 };
+    std::vector<int> beggarTargets = { 1, 2, 3, 4, 5 };
+    std::vector<int> blueDrinkTargets = { 1, 2, 3, 4, 5 }; // 파란 드링크 사용 횟수
+    std::vector<int> redDrinkTargets = { 1, 2, 3, 4, 5 };  // 빨간 드링크 사용 횟수
+
+    // 각 카테고리별 메달 개수 추적
+    int clickMedals = 0;
+    int goldMedals = 0;
+    int graduationMedals = 0;
+    int beggarMedals = 0;
+    int blueDrinkMedals = 0;
+    int redDrinkMedals = 0;
+
+    // 각 카테고리별 보상 수령 상태
+    int clickRewardsClaimed = 0;
+    int goldRewardsClaimed = 0;
+    int graduationRewardsClaimed = 0;
+    int beggarRewardsClaimed = 0;
+    int blueDrinkRewardsClaimed = 0;
+    int redDrinkRewardsClaimed = 0;
+
+    // 에너지 드링크 관련
+    int blueDrinks = 0;
+    int redDrinks = 0;
+
+    // 에너지 드링크 사용 횟수 추적
+    int blueDrinksUsed = 0;
+    int redDrinksUsed = 0;
+
+    // 에너지 드링크 효과 관련
+    sf::Clock blueEffectTimer;
+    sf::Clock redEffectTimer;
+    bool blueEffectActive = false;
+    bool redEffectActive = false;
+
+    // 메달 위치 설정 변수들
+    float medalStartX = 78.0f;
+    float medalStartY = 205.0f;
+    float medalSpacing = 27.0f;
+    float medalRowSpacing = 78.0f;
+
+    // 보상 버튼 위치 설정 변수들
+    float buttonStartX = 279.0f;
+    float buttonStartY = 179.0f;
+    float buttonRowSpacing = 78.0f;
+    float buttonWidth = 50.0f;
+    float buttonHeight = 50.0f;
+
+public:
+    bool init() {
+        if (!medalTexture.loadFromFile("Achieve_medal.png")) {
+            std::cerr << "Achieve_medal.png 로딩 실패!" << std::endl;
+            return false;
+        }
+
+        if (!rewardButtonTexture.loadFromFile("Achieve_button_rewarding.png")) {
+            std::cerr << "Achieve_button_rewarding.png 로딩 실패!" << std::endl;
+            return false;
+        }
+
+        medalSprite.setTexture(medalTexture);
+        medalSprite.setScale(0.6f, 0.6f);
+
+        rewardButtonSprite.setTexture(rewardButtonTexture);
+
+        // 업적 상태 초기화 (각 5개씩)
+        clickAchievements.resize(5, false);
+        goldAchievements.resize(5, false);
+        graduationAchievements.resize(5, false);
+        beggarAchievements.resize(5, false);
+        blueDrinkAchievements.resize(5, false);
+        redDrinkAchievements.resize(5, false);
+
+        return true;
+    }
+
+    void updateAchievements(int goldPerClick, int friendIncome, int knuLevel, int friendCount) {
+        // 클릭 업적 체크
+        for (size_t i = 0; i < clickTargets.size(); i++) {
+            if (goldPerClick >= clickTargets[i]) {
+                if (!clickAchievements[i]) {
+                    clickAchievements[i] = true;
+                    clickMedals++;
+                    std::cout << "클릭 업적 달성! 클릭당 " << clickTargets[i] << "골드 (보상 버튼을 클릭하세요!)" << std::endl;
+                }
+            }
+        }
+
+        // 골드 업적 체크 (친구들 초당 수익)
+        for (size_t i = 0; i < goldTargets.size(); i++) {
+            if (friendIncome >= goldTargets[i]) {
+                if (!goldAchievements[i]) {
+                    goldAchievements[i] = true;
+                    goldMedals++;
+                    std::cout << "골드 업적 달성! 초당 " << goldTargets[i] << "골드 (보상 버튼을 클릭하세요!)" << std::endl;
+                }
+            }
+        }
+
+        // 졸업 업적 체크 (KNU 레벨)
+        for (size_t i = 0; i < graduationTargets.size(); i++) {
+            if (knuLevel >= graduationTargets[i]) {
+                if (!graduationAchievements[i]) {
+                    graduationAchievements[i] = true;
+                    graduationMedals++;
+                    std::cout << "졸업 업적 달성! KNU 레벨 " << graduationTargets[i] << " (보상 버튼을 클릭하세요!)" << std::endl;
+                }
+            }
+        }
+
+        // 구걸 업적 체크 (친구 구매 개수)
+        for (size_t i = 0; i < beggarTargets.size(); i++) {
+            if (friendCount >= beggarTargets[i]) {
+                if (!beggarAchievements[i]) {
+                    beggarAchievements[i] = true;
+                    beggarMedals++;
+                    std::cout << "구걸 업적 달성! 친구 " << beggarTargets[i] << "명 구매 (보상 버튼을 클릭하세요!)" << std::endl;
+                }
+            }
+        }
+
+        // 파란 드링크 사용 업적 체크
+        for (size_t i = 0; i < blueDrinkTargets.size(); i++) {
+            if (blueDrinksUsed >= blueDrinkTargets[i]) {
+                if (!blueDrinkAchievements[i]) {
+                    blueDrinkAchievements[i] = true;
+                    blueDrinkMedals++;
+                    std::cout << "파란 드링크 업적 달성! " << blueDrinkTargets[i] << "회 사용 (보상 버튼을 클릭하세요!)" << std::endl;
+                }
+            }
+        }
+
+        // 빨간 드링크 사용 업적 체크
+        for (size_t i = 0; i < redDrinkTargets.size(); i++) {
+            if (redDrinksUsed >= redDrinkTargets[i]) {
+                if (!redDrinkAchievements[i]) {
+                    redDrinkAchievements[i] = true;
+                    redDrinkMedals++;
+                    std::cout << "빨간 드링크 업적 달성! " << redDrinkTargets[i] << "회 사용 (보상 버튼을 클릭하세요!)" << std::endl;
+                }
+            }
+        }
+    }
+
+    bool handleRewardButtonClick(sf::Vector2f mousePos) {
+        std::cout << "[보상 버튼 클릭 체크] 마우스 위치: (" << mousePos.x << ", " << mousePos.y << ")" << std::endl;
+
+        // 클릭 업적 보상 버튼 (첫 번째 줄)
+        sf::FloatRect clickButtonArea(buttonStartX, buttonStartY, buttonWidth, buttonHeight);
+        if (clickButtonArea.contains(mousePos) && clickMedals > clickRewardsClaimed) {
+            std::cout << "클릭 업적 보상 버튼 클릭됨!" << std::endl;
+            int newRewards = clickMedals - clickRewardsClaimed;
+            for (int i = 0; i < newRewards; i++) {
+                if (clickRewardsClaimed + i + 1 <= 3) {
+                    blueDrinks++;
+                    std::cout << "클릭 업적 보상: 파란 에너지 드링크 획득! 현재 개수: " << blueDrinks << std::endl;
+                }
+                else {
+                    redDrinks++;
+                    std::cout << "클릭 업적 보상: 빨간 에너지 드링크 획득! 현재 개수: " << redDrinks << std::endl;
+                }
+            }
+            clickRewardsClaimed = clickMedals;
+            return true;
+        }
+
+        // 골드 업적 보상 버튼 (두 번째 줄)
+        sf::FloatRect goldButtonArea(buttonStartX, buttonStartY + buttonRowSpacing, buttonWidth, buttonHeight);
+        if (goldButtonArea.contains(mousePos) && goldMedals > goldRewardsClaimed) {
+            std::cout << "골드 업적 보상 버튼 클릭됨!" << std::endl;
+            int newRewards = goldMedals - goldRewardsClaimed;
+            for (int i = 0; i < newRewards; i++) {
+                if (goldRewardsClaimed + i + 1 <= 3) {
+                    blueDrinks++;
+                    std::cout << "골드 업적 보상: 파란 에너지 드링크 획득! 현재 개수: " << blueDrinks << std::endl;
+                }
+                else {
+                    redDrinks++;
+                    std::cout << "골드 업적 보상: 빨간 에너지 드링크 획득! 현재 개수: " << redDrinks << std::endl;
+                }
+            }
+            goldRewardsClaimed = goldMedals;
+            return true;
+        }
+
+        // 졸업 업적 보상 버튼 (세 번째 줄)
+        sf::FloatRect graduationButtonArea(buttonStartX, buttonStartY + (2 * buttonRowSpacing), buttonWidth, buttonHeight);
+        if (graduationButtonArea.contains(mousePos) && graduationMedals > graduationRewardsClaimed) {
+            std::cout << "졸업 업적 보상 버튼 클릭됨!" << std::endl;
+            int newRewards = graduationMedals - graduationRewardsClaimed;
+            for (int i = 0; i < newRewards; i++) {
+                if (graduationRewardsClaimed + i + 1 <= 3) {
+                    blueDrinks++;
+                    std::cout << "졸업 업적 보상: 파란 에너지 드링크 획득! 현재 개수: " << blueDrinks << std::endl;
+                }
+                else {
+                    redDrinks++;
+                    std::cout << "졸업 업적 보상: 빨간 에너지 드링크 획득! 현재 개수: " << redDrinks << std::endl;
+                }
+            }
+            graduationRewardsClaimed = graduationMedals;
+            return true;
+        }
+
+        // 구걸 업적 보상 버튼 (네 번째 줄)
+        sf::FloatRect beggarButtonArea(buttonStartX, buttonStartY + (3 * buttonRowSpacing), buttonWidth, buttonHeight);
+        if (beggarButtonArea.contains(mousePos) && beggarMedals > beggarRewardsClaimed) {
+            std::cout << "구걸 업적 보상 버튼 클릭됨!" << std::endl;
+            int newRewards = beggarMedals - beggarRewardsClaimed;
+            for (int i = 0; i < newRewards; i++) {
+                if (beggarRewardsClaimed + i + 1 <= 3) {
+                    blueDrinks++;
+                    std::cout << "구걸 업적 보상: 파란 에너지 드링크 획득! 현재 개수: " << blueDrinks << std::endl;
+                }
+                else {
+                    redDrinks++;
+                    std::cout << "구걸 업적 보상: 빨간 에너지 드링크 획득! 현재 개수: " << redDrinks << std::endl;
+                }
+            }
+            beggarRewardsClaimed = beggarMedals;
+            return true;
+        }
+
+        // 파란 드링크 사용 업적 보상 버튼 (다섯 번째 줄)
+        sf::FloatRect blueDrinkButtonArea(buttonStartX, buttonStartY + (4 * buttonRowSpacing), buttonWidth, buttonHeight);
+        if (blueDrinkButtonArea.contains(mousePos) && blueDrinkMedals > blueDrinkRewardsClaimed) {
+            std::cout << "파란 드링크 사용 업적 보상 버튼 클릭됨!" << std::endl;
+            int newRewards = blueDrinkMedals - blueDrinkRewardsClaimed;
+            for (int i = 0; i < newRewards; i++) {
+                blueDrinks++;
+                std::cout << "파란 드링크 사용 업적 보상: 파란 에너지 드링크 획득! 현재 개수: " << blueDrinks << std::endl;
+            }
+            blueDrinkRewardsClaimed = blueDrinkMedals;
+            return true;
+        }
+
+        // 빨간 드링크 사용 업적 보상 버튼 (여섯 번째 줄)
+        sf::FloatRect redDrinkButtonArea(buttonStartX, buttonStartY + (5 * buttonRowSpacing), buttonWidth, buttonHeight);
+        if (redDrinkButtonArea.contains(mousePos) && redDrinkMedals > redDrinkRewardsClaimed) {
+            std::cout << "빨간 드링크 사용 업적 보상 버튼 클릭됨!" << std::endl;
+            int newRewards = redDrinkMedals - redDrinkRewardsClaimed;
+            for (int i = 0; i < newRewards; i++) {
+                redDrinks++;
+                std::cout << "빨간 드링크 사용 업적 보상: 빨간 에너지 드링크 획득! 현재 개수: " << redDrinks << std::endl;
+            }
+            redDrinkRewardsClaimed = redDrinkMedals;
+            return true;
+        }
+
+        return false;
+    }
+
+    void updateEffects() {
+        // 파란 드링크 효과 시간 체크
+        if (blueEffectActive && blueEffectTimer.getElapsedTime().asSeconds() >= 10.0f) {
+            blueEffectActive = false;
+            std::cout << "파란 에너지 드링크 효과 종료!" << std::endl;
+        }
+
+        // 빨간 드링크 효과 시간 체크
+        if (redEffectActive && redEffectTimer.getElapsedTime().asSeconds() >= 10.0f) {
+            redEffectActive = false;
+            std::cout << "빨간 에너지 드링크 효과 종료!" << std::endl;
+        }
+    }
+
+    bool handleDrinkClick(sf::Vector2f mousePos) {
+        // 파란 드링크 클릭 영역 (x:65, y:55 주변)
+        if (sf::FloatRect(60, 50, 20, 20).contains(mousePos) && blueDrinks > 0) {
+            blueDrinks--;
+            blueDrinksUsed++; // 사용 횟수 증가
+            blueEffectActive = true;
+            blueEffectTimer.restart();
+            std::cout << "파란 에너지 드링크 사용! 10초간 골드 10배 효과 활성화! 남은 개수: " << blueDrinks << ", 총 사용 횟수: " << blueDrinksUsed << std::endl;
+            return true;
+        }
+
+        // 빨간 드링크 클릭 영역 (x:140, y:55 주변)
+        if (sf::FloatRect(135, 50, 20, 20).contains(mousePos) && redDrinks > 0) {
+            redDrinks--;
+            redDrinksUsed++; // 사용 횟수 증가
+            redEffectActive = true;
+            redEffectTimer.restart();
+            std::cout << "빨간 에너지 드링크 사용! 10초간 골드 100배 효과 활성화! 남은 개수: " << redDrinks << ", 총 사용 횟수: " << redDrinksUsed << std::endl;
+            return true;
+        }
+
+        return false;
+    }
+
+    int getGoldMultiplier() const {
+        if (redEffectActive) return 100;
+        if (blueEffectActive) return 10;
+        return 1;
+    }
+
+    int getBlueDrinks() const {
+        return blueDrinks;
+    }
+
+    int getRedDrinks() const {
+        return redDrinks;
+    }
+
+    int getBlueDrinksUsed() const {
+        return blueDrinksUsed;
+    }
+
+    int getRedDrinksUsed() const {
+        return redDrinksUsed;
+    }
+
+    bool isBlueEffectActive() const {
+        return blueEffectActive;
+    }
+
+    bool isRedEffectActive() const {
+        return redEffectActive;
+    }
+
+    float getBlueEffectTimeLeft() const {
+        if (!blueEffectActive) return 0.0f;
+        return 10.0f - blueEffectTimer.getElapsedTime().asSeconds();
+    }
+
+    float getRedEffectTimeLeft() const {
+        if (!redEffectActive) return 0.0f;
+        return 10.0f - redEffectTimer.getElapsedTime().asSeconds();
+    }
+
+    void draw(sf::RenderWindow& window) {
+        // 클릭 업적 메달 그리기 (첫 번째 줄)
+        for (size_t i = 0; i < clickAchievements.size(); i++) {
+            if (clickAchievements[i]) {
+                medalSprite.setPosition(medalStartX + (i * medalSpacing), medalStartY);
+                window.draw(medalSprite);
+            }
+        }
+
+        // 골드 업적 메달 그리기 (두 번째 줄)
+        for (size_t i = 0; i < goldAchievements.size(); i++) {
+            if (goldAchievements[i]) {
+                medalSprite.setPosition(medalStartX + (i * medalSpacing), medalStartY + medalRowSpacing);
+                window.draw(medalSprite);
+            }
+        }
+
+        // 졸업 업적 메달 그리기 (세 번째 줄)
+        for (size_t i = 0; i < graduationAchievements.size(); i++) {
+            if (graduationAchievements[i]) {
+                medalSprite.setPosition(medalStartX + (i * medalSpacing), medalStartY + (2 * medalRowSpacing));
+                window.draw(medalSprite);
+            }
+        }
+
+        // 구걸 업적 메달 그리기 (네 번째 줄)
+        for (size_t i = 0; i < beggarAchievements.size(); i++) {
+            if (beggarAchievements[i]) {
+                medalSprite.setPosition(medalStartX + (i * medalSpacing), medalStartY + (3 * medalRowSpacing));
+                window.draw(medalSprite);
+            }
+        }
+
+        // 파란 드링크 사용 업적 메달 그리기 (다섯 번째 줄)
+        for (size_t i = 0; i < blueDrinkAchievements.size(); i++) {
+            if (blueDrinkAchievements[i]) {
+                medalSprite.setPosition(medalStartX + (i * medalSpacing), medalStartY + (4 * medalRowSpacing));
+                window.draw(medalSprite);
+            }
+        }
+
+        // 빨간 드링크 사용 업적 메달 그리기 (여섯 번째 줄)
+        for (size_t i = 0; i < redDrinkAchievements.size(); i++) {
+            if (redDrinkAchievements[i]) {
+                medalSprite.setPosition(medalStartX + (i * medalSpacing), medalStartY + (5 * medalRowSpacing));
+                window.draw(medalSprite);
+            }
+        }
+
+        // 보상 버튼 그리기 (수령하지 않은 보상이 있을 때만)
+        if (clickMedals > clickRewardsClaimed) {
+            rewardButtonSprite.setPosition(buttonStartX, buttonStartY);
+            window.draw(rewardButtonSprite);
+        }
+        if (goldMedals > goldRewardsClaimed) {
+            rewardButtonSprite.setPosition(buttonStartX, buttonStartY + buttonRowSpacing);
+            window.draw(rewardButtonSprite);
+        }
+        if (graduationMedals > graduationRewardsClaimed) {
+            rewardButtonSprite.setPosition(buttonStartX, buttonStartY + (2 * buttonRowSpacing));
+            window.draw(rewardButtonSprite);
+        }
+        if (beggarMedals > beggarRewardsClaimed) {
+            rewardButtonSprite.setPosition(buttonStartX, buttonStartY + (3 * buttonRowSpacing));
+            window.draw(rewardButtonSprite);
+        }
+        if (blueDrinkMedals > blueDrinkRewardsClaimed) {
+            rewardButtonSprite.setPosition(buttonStartX, buttonStartY + (4 * buttonRowSpacing));
+            window.draw(rewardButtonSprite);
+        }
+        if (redDrinkMedals > redDrinkRewardsClaimed) {
+            rewardButtonSprite.setPosition(buttonStartX, buttonStartY + (5 * buttonRowSpacing));
+            window.draw(rewardButtonSprite);
+        }
+    }
+};
+
 class Game {
 private:
     sf::RenderWindow window;
@@ -841,6 +1279,7 @@ private:
     RealEstate realEstate;
     KNUPowerSystem knuPowerSystem;
     FriendSystem friendSystem;
+    AchievementSystem achievementSystem;
 
     sf::Texture mjTexture, ahTexture, jsTexture;
     sf::Sprite mjSprite, ahSprite, jsSprite;
@@ -850,6 +1289,11 @@ private:
     sf::Text assetText;
     sf::Font assetFont;
     int totalAsset = 0;
+
+    // 에너지 드링크 표시용 텍스트
+    sf::Text blueDrinkText;
+    sf::Text redDrinkText;
+    sf::Text effectText; // 효과 표시용 텍스트
 
     std::string lastScene = "bg_playground.png";
     bool shouldShowCharacter = true;
@@ -862,14 +1306,15 @@ private:
     }
 
 public:
-    Game() : window(sf::VideoMode(405, 720), "차등 보너스 & 부동산 클릭 보너스 시스템") {}
+    Game() : window(sf::VideoMode(405, 720), "통합 게임 시스템 - 차등 보너스 + 업적 시스템") {}
 
     bool init() {
         std::locale::global(std::locale(""));
         std::wcout.imbue(std::locale(""));
 
         if (!moneyDisplay.init() || !background.init(window) || !character.init() ||
-            !realEstate.init(window) || !knuPowerSystem.init(window) || !friendSystem.init())
+            !realEstate.init(window) || !knuPowerSystem.init(window) || !friendSystem.init() ||
+            !achievementSystem.init())
             return false;
 
         clickableArea.setSize({ 180.f, 40.f });
@@ -903,6 +1348,24 @@ public:
         assetText.setCharacterSize(16);
         assetText.setFillColor(sf::Color::White);
         assetText.setPosition(window.getSize().x - 200.f, 10.f);
+
+        // 에너지 드링크 텍스트 초기화
+        blueDrinkText.setFont(assetFont);
+        blueDrinkText.setCharacterSize(18);
+        blueDrinkText.setFillColor(sf::Color::Blue);
+        blueDrinkText.setPosition(65.f, 55.f); // 파란 드링크 위치 (x:65, y:55)
+
+        redDrinkText.setFont(assetFont);
+        redDrinkText.setCharacterSize(18);
+        redDrinkText.setFillColor(sf::Color::Red);
+        redDrinkText.setPosition(140.f, 55.f); // 빨간 드링크 위치 (x:140, y:55)
+
+        // 효과 표시 텍스트 초기화
+        effectText.setFont(assetFont);
+        effectText.setCharacterSize(14);
+        effectText.setFillColor(sf::Color::Yellow);
+        effectText.setPosition(200.f, 55.f);
+
         updateTotalAsset();
 
         return true;
@@ -911,50 +1374,54 @@ public:
     void updateTotalAsset() {
         int baseMoney = moneyDisplay.getMoney();
 
-        // 친구 보너스 계산 (기존 5% 보너스)
-        int friendBonus = 0;
-        int friendCount = 0;
-        if (friendSystem.isFriendOwned(0)) friendCount++;
-        if (friendSystem.isFriendOwned(1)) friendCount++;
-        if (friendSystem.isFriendOwned(2)) friendCount++;
-        friendBonus = static_cast<int>(baseMoney * (friendCount * 0.05));
+        // 친구별 차등 보너스 계산
+        int friend1Level = friendSystem.getFriendLevel(1); // 명준
+        int friend2Level = friendSystem.getFriendLevel(2); // 아현
+        int friend3Level = friendSystem.getFriendLevel(2); // 진서
 
-        // 20레벨 달성 차등 보너스 추가 계산
-        int level20Bonus = knuPowerSystem.calculateFriendBonus(
-            baseMoney,
-            friendSystem.getFriendLevel(0),
-            friendSystem.getFriendLevel(1),
-            friendSystem.getFriendLevel(2)
-        );
+        int friendBonus = knuPowerSystem.calculateFriendBonus(baseMoney, friend1Level, friend2Level, friend3Level);
 
         int propertyValue = realEstate.getTotalPropertyValue();
         int propertyInterest = realEstate.getTotalInterest();
+        int salesProfit = realEstate.getTotalSalesProfit();
+
         int friendIncome = friendSystem.getTotalFriendIncome();
 
-        // 총 자산 계산 (차등 20레벨 보너스 포함)
-        totalAsset = baseMoney + friendBonus + level20Bonus + propertyValue + propertyInterest + (friendIncome * 60);
+        totalAsset = baseMoney + friendBonus + propertyValue + propertyInterest + salesProfit + (friendIncome * 60);
 
         std::wstring assetString = L"현재 자산 : " + formatMoney(totalAsset);
         assetText.setFillColor(sf::Color(100, 250, 50));
         assetText.setPosition(210.f, 30.f);
         assetText.setString(assetString);
 
-        // KNU 파워 화면에서 친구별 차등 보너스 표시 업데이트
-        knuPowerSystem.updateFriendBonusDisplay(
-            baseMoney,
-            friendSystem.getFriendLevel(0),
-            friendSystem.getFriendLevel(1),
-            friendSystem.getFriendLevel(2)
-        );
-
-        // 클릭당 골드 및 부동산 판매 수익 표시 업데이트
+        // KNU 파워 시스템 디스플레이 업데이트
         knuPowerSystem.updateDisplays(
             friendSystem.isFriendOwned(0),
             friendSystem.isFriendOwned(1),
             friendSystem.isFriendOwned(2),
             realEstate.getOwnedPropertyCount(),
-            realEstate.getTotalSalesProfit()
+            salesProfit
         );
+
+        // 친구별 보너스 표시 업데이트
+        knuPowerSystem.updateFriendBonusDisplay(baseMoney, friend1Level, friend2Level, friend3Level);
+
+        // 에너지 드링크 개수 업데이트
+        blueDrinkText.setString(std::to_string(achievementSystem.getBlueDrinks()));
+        redDrinkText.setString(std::to_string(achievementSystem.getRedDrinks()));
+
+        // 효과 표시 업데이트
+        if (achievementSystem.isRedEffectActive()) {
+            effectText.setString("빨간드링크 효과: " + std::to_string(static_cast<int>(achievementSystem.getRedEffectTimeLeft())) + "초");
+            effectText.setFillColor(sf::Color::Red);
+        }
+        else if (achievementSystem.isBlueEffectActive()) {
+            effectText.setString("파란드링크 효과: " + std::to_string(static_cast<int>(achievementSystem.getBlueEffectTimeLeft())) + "초");
+            effectText.setFillColor(sf::Color::Blue);
+        }
+        else {
+            effectText.setString("");
+        }
     }
 
     void run() {
@@ -973,19 +1440,21 @@ private:
                 window.close();
 
             if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space) {
-                int goldIncrease = knuPowerSystem.getGoldPerClick(
+                int baseGoldIncrease = knuPowerSystem.getGoldPerClick(
                     friendSystem.isFriendOwned(0),
                     friendSystem.isFriendOwned(1),
                     friendSystem.isFriendOwned(2),
                     realEstate.getOwnedPropertyCount()
                 );
-                moneyDisplay.increase(goldIncrease);
 
-                // 클릭 보너스 정보 출력
-                int propertyCount = realEstate.getOwnedPropertyCount();
-                if (propertyCount > 0) {
-                    int propertyBonus = knuPowerSystem.calculatePropertyClickBonus(knuPowerSystem.getGoldPerClick(), propertyCount);
-                    std::cout << "💎 클릭 획득: " << goldIncrease << "골드 (부동산 보너스: " << propertyBonus << "골드)" << std::endl;
+                // 에너지 드링크 효과 적용
+                int multiplier = achievementSystem.getGoldMultiplier();
+                int finalGoldIncrease = baseGoldIncrease * multiplier;
+
+                moneyDisplay.increase(finalGoldIncrease);
+
+                if (multiplier > 1) {
+                    std::cout << "에너지 드링크 효과로 " << finalGoldIncrease << "골드 획득! (기본: " << baseGoldIncrease << " x " << multiplier << ")" << std::endl;
                 }
             }
 
@@ -995,10 +1464,38 @@ private:
 
             if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 sf::Vector2f mousePos = window.mapPixelToCoords({ event.mouseButton.x, event.mouseButton.y });
+                std::wcout << L"[클릭 위치] x: " << static_cast<int>(mousePos.x) << L", y: " << static_cast<int>(mousePos.y) << std::endl;
 
                 std::string current = background.getCurrentFile();
 
-                if (current == "KUN power_bg.png") {
+                // 에너지 드링크 클릭 처리 (업적 화면이 아닐 때만)
+                if (current != "Achieve_bg.png" && achievementSystem.handleDrinkClick(mousePos)) {
+                    updateTotalAsset();
+                    return; // 에너지 드링크를 클릭했으면 다른 클릭 처리는 하지 않음
+                }
+
+                // 업적 화면으로 전환하는 클릭 영역 (지정된 좌표들을 포함하는 영역)
+                if (sf::FloatRect(14, 685, 15, 25).contains(mousePos)) {
+                    lastScene = current;
+                    background.load("Achieve_bg.png", window);
+                    shouldShowCharacter = false;
+                    std::cout << "업적 화면으로 전환!" << std::endl;
+                }
+                // 업적 화면에서 뒤로가기 (새로운 좌표 영역)
+                else if (current == "Achieve_bg.png") {
+                    if (sf::FloatRect(352, 17, 26, 19).contains(mousePos)) {
+                        background.load(lastScene, window);
+                        shouldShowCharacter = isCharacterBackground(lastScene);
+                        std::cout << "업적 화면에서 뒤로가기!" << std::endl;
+                    }
+                    // 업적 화면에서 보상 버튼 클릭 처리
+                    else if (achievementSystem.handleRewardButtonClick(mousePos)) {
+                        updateTotalAsset();
+                        std::cout << "보상 버튼 클릭 처리 완료!" << std::endl;
+                    }
+                }
+                // KNU 파워 화면
+                else if (current == "KUN power_bg.png") {
                     if (knuPowerSystem.handleClick(mousePos, moneyDisplay)) {
                         updateTotalAsset();
                     }
@@ -1007,21 +1504,17 @@ private:
                         shouldShowCharacter = isCharacterBackground(lastScene);
                     }
                 }
+                // 부동산 화면
                 else if (current == "building_bg.png") {
                     if (realEstate.handleClick(mousePos, moneyDisplay)) {
-                        updateTotalAsset(); // 이미 updateDisplays 포함됨
-
-                        // 부동산 거래 시 정보 출력
-                        int propertyCount = realEstate.getOwnedPropertyCount();
-                        int totalSalesProfit = realEstate.getTotalSalesProfit();
-                        std::cout << "🏢 현재 부동산 " << propertyCount << "개 보유 중!" << std::endl;
-                        std::cout << "💰 역대 부동산 판매 총 수익: " << totalSalesProfit << "골드" << std::endl;
+                        updateTotalAsset();
                     }
                     else if (sf::FloatRect(352, 92, 27, 23).contains(mousePos)) {
                         background.load(lastScene, window);
                         shouldShowCharacter = isCharacterBackground(lastScene);
                     }
                 }
+                // 친구 화면
                 else if (current == "friends_bg.png") {
                     if (friendSystem.handleClick(mousePos, moneyDisplay)) {
                         updateTotalAsset();
@@ -1031,6 +1524,7 @@ private:
                         shouldShowCharacter = isCharacterBackground(lastScene);
                     }
                 }
+                // 구걸장소 이동 화면
                 else if (current == "MovingBeggingPlace_bg.png") {
                     if (sf::FloatRect(23, 159, 157, 189).contains(mousePos)) {
                         background.load("bg_playground.png", window);
@@ -1053,7 +1547,8 @@ private:
                         shouldShowCharacter = isCharacterBackground(lastScene);
                     }
                 }
-                else if (current != "MovingBeggingPlace_bg.png" && current != "friends_bg.png") {
+                // 메인 게임 화면들
+                else if (current != "MovingBeggingPlace_bg.png" && current != "friends_bg.png" && current != "Achieve_bg.png") {
                     if (clickableArea.getGlobalBounds().contains(mousePos)) {
                         lastScene = current;
                         background.load("MovingBeggingPlace_bg.png", window);
@@ -1090,7 +1585,22 @@ private:
         }
 
         friendSystem.updateIncome(moneyDisplay);
+        achievementSystem.updateEffects(); // 에너지 드링크 효과 업데이트
+
         updateTotalAsset();
+
+        // 업적 업데이트
+        int goldPerClick = knuPowerSystem.getGoldPerClick(
+            friendSystem.isFriendOwned(0),
+            friendSystem.isFriendOwned(1),
+            friendSystem.isFriendOwned(2),
+            realEstate.getOwnedPropertyCount()
+        );
+        int friendIncome = friendSystem.getTotalFriendIncome();
+        int knuLevel = knuPowerSystem.getLevel();
+        int friendCount = friendSystem.getOwnedFriendCount();
+
+        achievementSystem.updateAchievements(goldPerClick, friendIncome, knuLevel, friendCount);
     }
 
     void render() {
@@ -1107,6 +1617,10 @@ private:
             background.draw(window);
             friendSystem.draw(window);
         }
+        else if (current == "Achieve_bg.png") {
+            background.draw(window);
+            achievementSystem.draw(window); // 업적 메달과 보상 버튼 그리기
+        }
         else {
             background.draw(window);
 
@@ -1119,8 +1633,17 @@ private:
             }
         }
 
-        moneyDisplay.draw(window);
-        window.draw(assetText);
+        // 업적 화면이 아닐 때만 돈과 자산 표시
+        if (current != "Achieve_bg.png") {
+            moneyDisplay.draw(window);
+            window.draw(assetText);
+            // 에너지 드링크 개수 표시
+            window.draw(blueDrinkText);
+            window.draw(redDrinkText);
+            // 효과 표시
+            window.draw(effectText);
+        }
+
         window.display();
     }
 };
@@ -1131,6 +1654,59 @@ int main() {
         std::cerr << "게임 초기화 실패!" << std::endl;
         return -1;
     }
+
+    std::cout << "=== 통합 게임 시스템 - 차등 보너스 + 업적 시스템 ===" << std::endl;
+    std::cout << "시작 자금: 50,000,000 골드" << std::endl;
+    std::cout << "\n=== 게임 조작법 ===" << std::endl;
+    std::cout << "스페이스바: 골드 획득" << std::endl;
+    std::cout << "F키: 친구 정보 출력 (차등 보너스율 포함)" << std::endl;
+    std::cout << "마우스 클릭: 친구 구매/레벨업" << std::endl;
+    std::cout << "좌표 (14-29, 685-710) 클릭: 업적 화면으로 이동" << std::endl;
+    std::cout << "업적 화면에서 좌표 (352-378, 17-36) 클릭: 이전 화면으로 돌아가기" << std::endl;
+
+    std::cout << "\n=== 차등 보너스 시스템 ===" << std::endl;
+    std::cout << "명준 20레벨 달성: 현재 골드의 0.1% 보너스" << std::endl;
+    std::cout << "아현 20레벨 달성: 현재 골드의 0.3% 보너스" << std::endl;
+    std::cout << "진서 20레벨 달성: 현재 골드의 0.5% 보너스" << std::endl;
+    std::cout << "부동산 클릭 보너스: 부동산 개수 × 0.5%" << std::endl;
+
+    std::cout << "\n=== 부동산 시스템 ===" << std::endl;
+    std::cout << "부동산 판매 시 수익 누적 추적" << std::endl;
+    std::cout << "역대 부동산 판매 총 수익이 자산에 반영됨" << std::endl;
+
+    std::cout << "\n=== 업적 시스템 ===" << std::endl;
+    std::cout << "클릭 업적: 스페이스바 골드 10/100/1000/10000/100000원" << std::endl;
+    std::cout << "골드 업적: 친구 초당 수익 10/100/1000/10000/100000원" << std::endl;
+    std::cout << "졸업 업적: KNU 레벨 10/20/100/200/250레벨" << std::endl;
+    std::cout << "구걸 업적: 친구 구매 1/2/3/4/5명" << std::endl;
+    std::cout << "파란 드링크 사용 업적: 파란 에너지 드링크 1/2/3/4/5회 사용" << std::endl;
+    std::cout << "빨간 드링크 사용 업적: 빨간 에너지 드링크 1/2/3/4/5회 사용" << std::endl;
+
+    std::cout << "\n=== 에너지 드링크 시스템 (보상 버튼 클릭 필요) ===" << std::endl;
+    std::cout << "각 업적 항목의 메달 1-3개: 파란 에너지 드링크 +1" << std::endl;
+    std::cout << "각 업적 항목의 메달 4개부터: 빨간 에너지 드링크 +1" << std::endl;
+    std::cout << "파란 드링크 사용 업적 보상: 파란 에너지 드링크 +1" << std::endl;
+    std::cout << "빨간 드링크 사용 업적 보상: 빨간 에너지 드링크 +1" << std::endl;
+    std::cout << "파란 드링크 클릭 (x:65, y:55): 10초간 골드 10배 효과" << std::endl;
+    std::cout << "빨간 드링크 클릭 (x:140, y:55): 10초간 골드 100배 효과" << std::endl;
+    std::cout << "업적 화면에서 보상 버튼을 클릭해야 에너지 드링크 획득!" << std::endl;
+
+    std::cout << "\n=== 위치 조절 변수들 ===" << std::endl;
+    std::cout << "메달 위치: medalStartX=78.0, medalStartY=205.0" << std::endl;
+    std::cout << "메달 간격: medalSpacing=27.0, medalRowSpacing=78.0" << std::endl;
+    std::cout << "보상 버튼 위치: buttonStartX=279.0, buttonStartY=179.0" << std::endl;
+    std::cout << "보상 버튼 간격: buttonRowSpacing=78.0" << std::endl;
+    std::cout << "보상 버튼 크기: buttonWidth=50.0, buttonHeight=50.0" << std::endl;
+
+    std::cout << "\n=== 통합 기능 특징 ===" << std::endl;
+    std::cout << "차등 친구 보너스 시스템 (명준 0.1%, 아현 0.3%, 진서 0.5%)" << std::endl;
+    std::cout << "부동산 판매 수익 누적 추적" << std::endl;
+    std::cout << "6가지 업적 카테고리 (클릭, 골드, 졸업, 구걸, 파란드링크, 빨간드링크)" << std::endl;
+    std::cout << "에너지 드링크 효과 시스템 (10배, 100배 골드 획득)" << std::endl;
+    std::cout << "실시간 자산 계산 (모든 보너스 포함)" << std::endl;
+    std::cout << "개별 친구 보너스 표시" << std::endl;
+    std::cout << "===========================================" << std::endl;
+
     game.run();
     return 0;
 }
