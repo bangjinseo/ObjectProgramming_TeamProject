@@ -1655,57 +1655,6 @@ int main() {
         return -1;
     }
 
-    std::cout << "=== 통합 게임 시스템 - 차등 보너스 + 업적 시스템 ===" << std::endl;
-    std::cout << "시작 자금: 50,000,000 골드" << std::endl;
-    std::cout << "\n=== 게임 조작법 ===" << std::endl;
-    std::cout << "스페이스바: 골드 획득" << std::endl;
-    std::cout << "F키: 친구 정보 출력 (차등 보너스율 포함)" << std::endl;
-    std::cout << "마우스 클릭: 친구 구매/레벨업" << std::endl;
-    std::cout << "좌표 (14-29, 685-710) 클릭: 업적 화면으로 이동" << std::endl;
-    std::cout << "업적 화면에서 좌표 (352-378, 17-36) 클릭: 이전 화면으로 돌아가기" << std::endl;
-
-    std::cout << "\n=== 차등 보너스 시스템 ===" << std::endl;
-    std::cout << "명준 20레벨 달성: 현재 골드의 0.1% 보너스" << std::endl;
-    std::cout << "아현 20레벨 달성: 현재 골드의 0.3% 보너스" << std::endl;
-    std::cout << "진서 20레벨 달성: 현재 골드의 0.5% 보너스" << std::endl;
-    std::cout << "부동산 클릭 보너스: 부동산 개수 × 0.5%" << std::endl;
-
-    std::cout << "\n=== 부동산 시스템 ===" << std::endl;
-    std::cout << "부동산 판매 시 수익 누적 추적" << std::endl;
-    std::cout << "역대 부동산 판매 총 수익이 자산에 반영됨" << std::endl;
-
-    std::cout << "\n=== 업적 시스템 ===" << std::endl;
-    std::cout << "클릭 업적: 스페이스바 골드 10/100/1000/10000/100000원" << std::endl;
-    std::cout << "골드 업적: 친구 초당 수익 10/100/1000/10000/100000원" << std::endl;
-    std::cout << "졸업 업적: KNU 레벨 10/20/100/200/250레벨" << std::endl;
-    std::cout << "구걸 업적: 친구 구매 1/2/3/4/5명" << std::endl;
-    std::cout << "파란 드링크 사용 업적: 파란 에너지 드링크 1/2/3/4/5회 사용" << std::endl;
-    std::cout << "빨간 드링크 사용 업적: 빨간 에너지 드링크 1/2/3/4/5회 사용" << std::endl;
-
-    std::cout << "\n=== 에너지 드링크 시스템 (보상 버튼 클릭 필요) ===" << std::endl;
-    std::cout << "각 업적 항목의 메달 1-3개: 파란 에너지 드링크 +1" << std::endl;
-    std::cout << "각 업적 항목의 메달 4개부터: 빨간 에너지 드링크 +1" << std::endl;
-    std::cout << "파란 드링크 사용 업적 보상: 파란 에너지 드링크 +1" << std::endl;
-    std::cout << "빨간 드링크 사용 업적 보상: 빨간 에너지 드링크 +1" << std::endl;
-    std::cout << "파란 드링크 클릭 (x:65, y:55): 10초간 골드 10배 효과" << std::endl;
-    std::cout << "빨간 드링크 클릭 (x:140, y:55): 10초간 골드 100배 효과" << std::endl;
-    std::cout << "업적 화면에서 보상 버튼을 클릭해야 에너지 드링크 획득!" << std::endl;
-
-    std::cout << "\n=== 위치 조절 변수들 ===" << std::endl;
-    std::cout << "메달 위치: medalStartX=78.0, medalStartY=205.0" << std::endl;
-    std::cout << "메달 간격: medalSpacing=27.0, medalRowSpacing=78.0" << std::endl;
-    std::cout << "보상 버튼 위치: buttonStartX=279.0, buttonStartY=179.0" << std::endl;
-    std::cout << "보상 버튼 간격: buttonRowSpacing=78.0" << std::endl;
-    std::cout << "보상 버튼 크기: buttonWidth=50.0, buttonHeight=50.0" << std::endl;
-
-    std::cout << "\n=== 통합 기능 특징 ===" << std::endl;
-    std::cout << "차등 친구 보너스 시스템 (명준 0.1%, 아현 0.3%, 진서 0.5%)" << std::endl;
-    std::cout << "부동산 판매 수익 누적 추적" << std::endl;
-    std::cout << "6가지 업적 카테고리 (클릭, 골드, 졸업, 구걸, 파란드링크, 빨간드링크)" << std::endl;
-    std::cout << "에너지 드링크 효과 시스템 (10배, 100배 골드 획득)" << std::endl;
-    std::cout << "실시간 자산 계산 (모든 보너스 포함)" << std::endl;
-    std::cout << "개별 친구 보너스 표시" << std::endl;
-    std::cout << "===========================================" << std::endl;
 
     game.run();
     return 0;
