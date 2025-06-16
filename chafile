@@ -22,7 +22,7 @@ std::wstring formatMoney(int money) {
 
 class MoneyDisplay {
 private:
-    int money = 50000;
+    int money = 50000000;
     sf::Text text;
     sf::Font font;
 
@@ -157,8 +157,14 @@ private:
     std::map<std::string, Property> properties;
     sf::Texture buildingTexture;
     sf::Sprite buildingSprite;
+    int totalSalesProfit = 0; // 역대 부동산 판매 수익 누적
 
 public:
+    // getTotalSalesProfit 함수 추가
+    int getTotalSalesProfit() const {
+        return totalSalesProfit;
+    }
+
     bool init(sf::RenderWindow& window) {
         if (!font.loadFromFile("NotoSansKR-SemiBold.ttf")) {
             std::cerr << "폰트 로딩 실패!" << std::endl;
@@ -279,11 +285,16 @@ public:
                 }
                 else {
                     int sellPrice = prop.price + prop.maxInterest;
+                    int profit = prop.maxInterest; // 실제 수익은 이자 부분
+                    totalSalesProfit += profit; // 수익 누적
+
                     moneyDisplay.addMoney(sellPrice);
                     prop.owned = false;
                     prop.buttonText.setString(formatMoney(prop.price));
                     prop.buttonText.setFillColor(sf::Color(0, 0, 0));
-                    std::cout << prop.name << " 판매 완료! " << sellPrice << "골드 획득" << std::endl;
+
+                    std::cout << prop.name << " 판매 완료! " << sellPrice << "골드 획득 (수익: " << profit << "골드)" << std::endl;
+                    std::cout << "💰 역대 부동산 판매 총 수익: " << totalSalesProfit << "골드" << std::endl;
                     return true;
                 }
             }
@@ -315,7 +326,11 @@ private:
     sf::Text levelText;
     sf::Text goldLevelText;
     sf::Text propertyLevelText;
-    sf::Text friendsText;
+
+    // 친구별 개별 보너스 표시 텍스트들
+    sf::Text myeongjunBonusText;
+    sf::Text ahyeonBonusText;
+    sf::Text jinseoBonusText;
 
 public:
     bool init(sf::RenderWindow& window) {
@@ -356,7 +371,7 @@ public:
         levelText.setPosition(195.f, 190.f);
 
         goldLevelText.setFont(font);
-        goldLevelText.setString(L" " + std::to_wstring(goldPerClick));
+        goldLevelText.setString(L" 1"); // 초기값은 1
         goldLevelText.setCharacterSize(18);
         goldLevelText.setFillColor(sf::Color(48, 42, 27));
         goldLevelText.setPosition(140.f, 305.f);
@@ -367,11 +382,26 @@ public:
         propertyLevelText.setFillColor(sf::Color(48, 42, 27));
         propertyLevelText.setPosition(157.f, 355.f);
 
-        friendsText.setFont(font);
-        friendsText.setString(L"친구 20레벨 달성 보너스");
-        friendsText.setCharacterSize(20);
-        friendsText.setFillColor(sf::Color::Black);
-        friendsText.setPosition(100.f, 970.f);
+        // 명준 보너스 텍스트 초기화 (0.1%)
+        myeongjunBonusText.setFont(font);
+        myeongjunBonusText.setString(L"");
+        myeongjunBonusText.setCharacterSize(12);
+        myeongjunBonusText.setFillColor(sf::Color(120, 84, 35));
+        myeongjunBonusText.setPosition(122.f, 511.f);
+
+        // 아현 보너스 텍스트 초기화 (0.3%)
+        ahyeonBonusText.setFont(font);
+        ahyeonBonusText.setString(L"");
+        ahyeonBonusText.setCharacterSize(12);
+        ahyeonBonusText.setFillColor(sf::Color(120, 84, 35));
+        ahyeonBonusText.setPosition(290.f, 511.f);
+
+        // 진서 보너스 텍스트 초기화 (0.5%)
+        jinseoBonusText.setFont(font);
+        jinseoBonusText.setString(L"");
+        jinseoBonusText.setCharacterSize(12);
+        jinseoBonusText.setFillColor(sf::Color(120, 84, 35));
+        jinseoBonusText.setPosition(122.f, 591.f);
 
         return true;
     }
@@ -384,30 +414,109 @@ public:
 
             levelText.setString(L"Lv" + std::to_wstring(level));
             levelUpText.setString(L"레벨업 (" + formatMoney(levelUpCost) + L")");
-            goldLevelText.setString(L" " + std::to_wstring(goldPerClick));
+            // goldLevelText 업데이트 제거 (별도 함수에서 처리)
 
             return true;
         }
         return false;
     }
 
+    // 개별 친구 보너스 계산 함수 (차등 보너스율 적용)
+    int calculateIndividualFriendBonus(int currentGold, int friendLevel, int friendIndex) {
+        if (friendLevel >= 20) {
+            double bonusRate = 0.0;
+            switch (friendIndex) {
+                case 0: bonusRate = 0.001; break; // 명준: 0.1%
+                case 1: bonusRate = 0.003; break; // 아현: 0.3%
+                case 2: bonusRate = 0.005; break; // 진서: 0.5%
+            }
+            return static_cast<int>(currentGold * bonusRate);
+        }
+        return 0;
+    }
+
+    // 전체 친구 보너스 계산 함수 (자산 계산용)
+    int calculateFriendBonus(int currentGold, int friend1Level, int friend2Level, int friend3Level) {
+        int totalBonus = 0;
+
+        // 명준 보너스 (0.1%)
+        if (friend1Level >= 20) {
+            totalBonus += static_cast<int>(currentGold * 0.001);
+        }
+
+        // 아현 보너스 (0.3%)
+        if (friend2Level >= 20) {
+            totalBonus += static_cast<int>(currentGold * 0.003);
+        }
+
+        // 진서 보너스 (0.5%)
+        if (friend3Level >= 20) {
+            totalBonus += static_cast<int>(currentGold * 0.005);
+        }
+
+        return totalBonus;
+    }
+
+    // 친구별 보너스 텍스트 업데이트 함수
+    void updateFriendBonusDisplay(int currentGold, int friend1Level, int friend2Level, int friend3Level) {
+        // 명준 보너스 표시 (0.1%)
+        if (friend1Level >= 20) {
+            int myeongjunBonus = calculateIndividualFriendBonus(currentGold, friend1Level, 0);
+            std::wstring myeongjunText = formatMoney(myeongjunBonus);
+            myeongjunBonusText.setString(myeongjunText);
+        } else {
+            myeongjunBonusText.setString(L"");
+        }
+
+        // 아현 보너스 표시 (0.3%)
+        if (friend2Level >= 20) {
+            int ahyeonBonus = calculateIndividualFriendBonus(currentGold, friend2Level, 1);
+            std::wstring ahyeonText = formatMoney(ahyeonBonus);
+            ahyeonBonusText.setString(ahyeonText);
+        } else {
+            ahyeonBonusText.setString(L"");
+        }
+
+        // 진서 보너스 표시 (0.5%)
+        if (friend3Level >= 20) {
+            int jinseoBonus = calculateIndividualFriendBonus(currentGold, friend3Level, 2);
+            std::wstring jinseoText = formatMoney(jinseoBonus);
+            jinseoBonusText.setString(jinseoText);
+        } else {
+            jinseoBonusText.setString(L"");
+        }
+    }
+
+    // 부동산 클릭 보너스 계산 (부동산 개수 * 0.5%)
+    int calculatePropertyClickBonus(int baseGold, int propertyCount) {
+        return static_cast<int>(baseGold * propertyCount * 0.005); // 0.5% = 0.005
+    }
+
+    // 전체 클릭당 골드 계산 (기본 + 친구 + 부동산)
     int getGoldPerClick(bool showMyeongjun, bool showAhyeon, bool showJinseo, int propertyCount) {
         int baseGold = goldPerClick;
 
+        // 친구 보너스 (기존 5% 보너스)
         int friendCount = 0;
         if (showMyeongjun) friendCount++;
         if (showAhyeon) friendCount++;
         if (showJinseo) friendCount++;
+        int friendBonus = static_cast<int>(baseGold * friendCount * 0.05);
 
-        int friendBonus = baseGold * friendCount * 0.1;
-        int propertyBonus = baseGold * propertyCount * 0.05;
+        // 부동산 클릭 보너스 (부동산 개수 * 0.5%)
+        int propertyBonus = calculatePropertyClickBonus(baseGold, propertyCount);
 
         return baseGold + friendBonus + propertyBonus;
     }
 
-    void updatePropertyBonus(int propertyCount) {
-        int propertyBonus = goldPerClick * propertyCount * 0.05;
-        propertyLevelText.setString(L" " + std::to_wstring(propertyBonus));
+    // 클릭당 골드 및 부동산 판매 수익 표시 업데이트 함수
+    void updateDisplays(bool showMyeongjun, bool showAhyeon, bool showJinseo, int propertyCount, int salesProfit) {
+        // 총 클릭당 골드 계산 및 표시
+        int totalClickGold = getGoldPerClick(showMyeongjun, showAhyeon, showJinseo, propertyCount);
+        goldLevelText.setString(L" " + std::to_wstring(totalClickGold));
+
+        // 역대 부동산 판매 수익 표시
+        propertyLevelText.setString(L" " + std::to_wstring(salesProfit));
     }
 
     bool handleClick(sf::Vector2f mousePos, MoneyDisplay& moneyDisplay) {
@@ -433,7 +542,11 @@ public:
         window.draw(levelText);
         window.draw(goldLevelText);
         window.draw(propertyLevelText);
-        window.draw(friendsText);
+
+        // 친구별 개별 보너스 텍스트 그리기
+        window.draw(myeongjunBonusText);
+        window.draw(ahyeonBonusText);
+        window.draw(jinseoBonusText);
     }
 };
 
@@ -448,7 +561,7 @@ public:
         bool owned;
         sf::FloatRect clickArea;
         sf::Text displayText;
-        sf::Text costText; // 레벨업 비용 표시용 텍스트 추가
+        sf::Text costText;
     };
 
 private:
@@ -464,7 +577,7 @@ public:
 
         friends.resize(3);
 
-        // 명준 (Friend 0)
+        // 명준 (Friend 0) - 0.1% 보너스
         friends[0].name = "명준";
         friends[0].purchasePrice = 1000;
         friends[0].level = 0;
@@ -481,14 +594,13 @@ public:
         friends[0].displayText.setOrigin(rect1.left + rect1.width / 2, rect1.top + rect1.height / 2);
         friends[0].displayText.setPosition(29.f + 70.f, 294.f + 15.f);
 
-        // 레벨업 비용 텍스트 초기화
         friends[0].costText.setFont(friendFont);
         friends[0].costText.setString(L"");
         friends[0].costText.setCharacterSize(14);
         friends[0].costText.setFillColor(sf::Color::Red);
         friends[0].costText.setPosition(29.f + 10.f, 294.f + 30.f);
 
-        // 아현 (Friend 1)
+        // 아현 (Friend 1) - 0.3% 보너스
         friends[1].name = "아현";
         friends[1].purchasePrice = 10000;
         friends[1].level = 0;
@@ -511,7 +623,7 @@ public:
         friends[1].costText.setFillColor(sf::Color::Red);
         friends[1].costText.setPosition(222.f + 10.f, 292.f + 30.f);
 
-        // 진서 (Friend 2)
+        // 진서 (Friend 2) - 0.5% 보너스
         friends[2].name = "진서";
         friends[2].purchasePrice = 100000;
         friends[2].level = 0;
@@ -541,15 +653,13 @@ public:
         for (size_t i = 0; i < friends.size(); i++) {
             if (friends[i].clickArea.contains(mousePos)) {
                 if (!friends[i].owned) {
-                    // 친구 구매
                     if (moneyDisplay.spendMoney(friends[i].purchasePrice)) {
                         friends[i].owned = true;
                         friends[i].level = 1;
 
-                        // 초기 수익 설정
-                        if (i == 0) friends[i].incomePerSecond = 10; // 명준
-                        else if (i == 1) friends[i].incomePerSecond = 100; // 아현
-                        else if (i == 2) friends[i].incomePerSecond = 1000; // 진서
+                        if (i == 0) friends[i].incomePerSecond = 10;
+                        else if (i == 1) friends[i].incomePerSecond = 100;
+                        else if (i == 2) friends[i].incomePerSecond = 1000;
 
                         updateDisplayText(i);
                         std::cout << friends[i].name << " 구매 완료! " << friends[i].purchasePrice << "골드 지불" << std::endl;
@@ -560,22 +670,20 @@ public:
                     }
                 }
                 else {
-                    // 레벨업
                     if (moneyDisplay.spendMoney(friends[i].levelUpCost)) {
                         friends[i].level++;
 
-                        // 수익 증가
-                        if (i == 0) { // 명준: 10원씩 증가
+                        if (i == 0) {
                             friends[i].incomePerSecond += 10;
                             friends[i].levelUpCost += 1000;
                         }
-                        else if (i == 1) { // 아현: 100원씩 증가
+                        else if (i == 1) {
                             friends[i].incomePerSecond += 100;
                             friends[i].levelUpCost += 10000;
                         }
-                        else if (i == 2) { // 진서: 특별 계산
+                        else if (i == 2) {
                             if (friends[i].level == 2) {
-                                friends[i].incomePerSecond = 2000; // 2레벨: 2000원/초
+                                friends[i].incomePerSecond = 2000;
                             }
                             else {
                                 friends[i].incomePerSecond += 2000;
@@ -585,6 +693,18 @@ public:
 
                         updateDisplayText(i);
                         std::cout << friends[i].name << " 레벨업! 현재 레벨: " << friends[i].level << std::endl;
+
+                        // 20레벨 달성 시 특별 메시지 (차등 보너스율 표시)
+                        if (friends[i].level == 20) {
+                            std::string bonusRate = "";
+                            if (i == 0) bonusRate = "0.1%";
+                            else if (i == 1) bonusRate = "0.3%";
+                            else if (i == 2) bonusRate = "0.5%";
+
+                            std::cout << "🎉 축하합니다! " << friends[i].name << "이(가) 20레벨에 달성했습니다!" << std::endl;
+                            std::cout << "💰 " << friends[i].name << "의 " << bonusRate << " 보너스가 활성화됩니다!" << std::endl;
+                        }
+
                         return true;
                     }
                     else {
@@ -599,16 +719,19 @@ public:
 
     void updateDisplayText(int friendIndex) {
         if (friendIndex >= 0 && friendIndex < static_cast<int>(friends.size()) && friends[friendIndex].owned) {
-            // 레벨 표시
             std::wstring levelText = L"Lv" + std::to_wstring(friends[friendIndex].level);
             friends[friendIndex].displayText.setString(levelText);
-            friends[friendIndex].displayText.setFillColor(sf::Color::Blue);
 
-            // 레벨업 비용 표시
+            // 20레벨 이상이면 색상 변경
+            if (friends[friendIndex].level >= 20) {
+                friends[friendIndex].displayText.setFillColor(sf::Color(255, 215, 0)); // 골드 색상
+            } else {
+                friends[friendIndex].displayText.setFillColor(sf::Color::Blue);
+            }
+
             std::wstring costText = L"레벨업: " + formatMoney(friends[friendIndex].levelUpCost);
             friends[friendIndex].costText.setString(costText);
 
-            // 수익 정보도 추가로 표시
             std::wcout << friends[friendIndex].name.c_str() << L" - 레벨: " << friends[friendIndex].level
                 << L", 초당 수익: " << friends[friendIndex].incomePerSecond
                 << L", 다음 레벨업 비용: " << friends[friendIndex].levelUpCost << std::endl;
@@ -640,6 +763,22 @@ public:
         return false;
     }
 
+    // 친구 레벨 반환 함수
+    int getFriendLevel(int friendIndex) const {
+        if (friendIndex >= 0 && friendIndex < static_cast<int>(friends.size())) {
+            return friends[friendIndex].level;
+        }
+        return 0;
+    }
+
+    // 친구 이름 반환 함수 추가
+    std::string getFriendName(int friendIndex) const {
+        if (friendIndex >= 0 && friendIndex < static_cast<int>(friends.size())) {
+            return friends[friendIndex].name;
+        }
+        return "";
+    }
+
     int getTotalFriendIncome() const {
         int totalIncome = 0;
         for (const auto& friendObj : friends) {
@@ -650,26 +789,42 @@ public:
         return totalIncome;
     }
 
-    // 친구 정보 출력 함수 추가
     void printFriendInfo() const {
-        std::cout << "\n=== 친구 정보 ===" << std::endl;
+        std::cout << "\n=== 친구 정보 (차등 보너스율) ===" << std::endl;
         for (size_t i = 0; i < friends.size(); i++) {
             if (friends[i].owned) {
+                std::string bonusRate = "";
+                if (i == 0) bonusRate = "0.1%";
+                else if (i == 1) bonusRate = "0.3%";
+                else if (i == 2) bonusRate = "0.5%";
+
                 std::cout << friends[i].name << " - Lv" << friends[i].level
                     << ", 초당 " << friends[i].incomePerSecond << "골드"
-                    << ", 레벨업 비용: " << friends[i].levelUpCost << "골드" << std::endl;
+                    << ", 레벨업 비용: " << friends[i].levelUpCost << "골드";
+
+                if (friends[i].level >= 20) {
+                    std::cout << " [🏆 20레벨 달성! " << bonusRate << " 보너스 활성화]";
+                } else {
+                    std::cout << " [20레벨 달성 시 " << bonusRate << " 보너스]";
+                }
+                std::cout << std::endl;
             }
             else {
-                std::cout << friends[i].name << " - 미구매 (구매 비용: " << friends[i].purchasePrice << "골드)" << std::endl;
+                std::string bonusRate = "";
+                if (i == 0) bonusRate = "0.1%";
+                else if (i == 1) bonusRate = "0.3%";
+                else if (i == 2) bonusRate = "0.5%";
+
+                std::cout << friends[i].name << " - 미구매 (구매 비용: " << friends[i].purchasePrice
+                    << "골드, 20레벨 달성 시 " << bonusRate << " 보너스)" << std::endl;
             }
         }
-        std::cout << "==================\n" << std::endl;
+        std::cout << "==========================================\n" << std::endl;
     }
 
     void draw(sf::RenderWindow& window) {
         for (const auto& friendObj : friends) {
             window.draw(friendObj.displayText);
-            // 소유한 친구만 레벨업 비용 표시
             if (friendObj.owned) {
                 window.draw(friendObj.costText);
             }
@@ -687,13 +842,11 @@ private:
     KNUPowerSystem knuPowerSystem;
     FriendSystem friendSystem;
 
-    // 친구 캐릭터들
     sf::Texture mjTexture, ahTexture, jsTexture;
     sf::Sprite mjSprite, ahSprite, jsSprite;
 
     sf::RectangleShape clickableArea;
 
-    // 자산 표시
     sf::Text assetText;
     sf::Font assetFont;
     int totalAsset = 0;
@@ -709,7 +862,7 @@ private:
     }
 
 public:
-    Game() : window(sf::VideoMode(405, 720), "친구 레벨업 비용 표시 시스템") {}
+    Game() : window(sf::VideoMode(405, 720), "차등 보너스 & 부동산 클릭 보너스 시스템") {}
 
     bool init() {
         std::locale::global(std::locale(""));
@@ -724,7 +877,6 @@ public:
         clickableArea.setOutlineColor(sf::Color::White);
         clickableArea.setOutlineThickness(2.f);
 
-        // 친구 캐릭터 텍스처 로딩
         if (!mjTexture.loadFromFile("friends_mj.png") ||
             !ahTexture.loadFromFile("friends_ah.png") ||
             !jsTexture.loadFromFile("friends_js.png")) {
@@ -743,7 +895,6 @@ public:
         ahSprite.setPosition(220.f, 360.f);
         jsSprite.setPosition(160.f, 180.f);
 
-        // 자산 표시 초기화
         if (!assetFont.loadFromFile("NotoSansKR-SemiBold.ttf")) {
             std::cerr << "자산 폰트 로딩 실패!" << std::endl;
             return false;
@@ -760,7 +911,7 @@ public:
     void updateTotalAsset() {
         int baseMoney = moneyDisplay.getMoney();
 
-        // 친구 보너스 계산
+        // 친구 보너스 계산 (기존 5% 보너스)
         int friendBonus = 0;
         int friendCount = 0;
         if (friendSystem.isFriendOwned(0)) friendCount++;
@@ -768,21 +919,42 @@ public:
         if (friendSystem.isFriendOwned(2)) friendCount++;
         friendBonus = static_cast<int>(baseMoney * (friendCount * 0.05));
 
-        // 부동산 가치와 이자 계산
+        // 20레벨 달성 차등 보너스 추가 계산
+        int level20Bonus = knuPowerSystem.calculateFriendBonus(
+            baseMoney,
+            friendSystem.getFriendLevel(0),
+            friendSystem.getFriendLevel(1),
+            friendSystem.getFriendLevel(2)
+        );
+
         int propertyValue = realEstate.getTotalPropertyValue();
         int propertyInterest = realEstate.getTotalInterest();
-
-        // 친구 수익 계산
         int friendIncome = friendSystem.getTotalFriendIncome();
 
-        // 총 자산 계산
-        totalAsset = baseMoney + friendBonus + propertyValue + propertyInterest + (friendIncome * 60);
+        // 총 자산 계산 (차등 20레벨 보너스 포함)
+        totalAsset = baseMoney + friendBonus + level20Bonus + propertyValue + propertyInterest + (friendIncome * 60);
 
-        // 텍스트 업데이트
         std::wstring assetString = L"현재 자산 : " + formatMoney(totalAsset);
         assetText.setFillColor(sf::Color(100, 250, 50));
         assetText.setPosition(210.f, 30.f);
         assetText.setString(assetString);
+
+        // KNU 파워 화면에서 친구별 차등 보너스 표시 업데이트
+        knuPowerSystem.updateFriendBonusDisplay(
+            baseMoney,
+            friendSystem.getFriendLevel(0),
+            friendSystem.getFriendLevel(1),
+            friendSystem.getFriendLevel(2)
+        );
+
+        // 클릭당 골드 및 부동산 판매 수익 표시 업데이트
+        knuPowerSystem.updateDisplays(
+            friendSystem.isFriendOwned(0),
+            friendSystem.isFriendOwned(1),
+            friendSystem.isFriendOwned(2),
+            realEstate.getOwnedPropertyCount(),
+            realEstate.getTotalSalesProfit()
+        );
     }
 
     void run() {
@@ -808,20 +980,24 @@ private:
                     realEstate.getOwnedPropertyCount()
                 );
                 moneyDisplay.increase(goldIncrease);
+
+                // 클릭 보너스 정보 출력
+                int propertyCount = realEstate.getOwnedPropertyCount();
+                if (propertyCount > 0) {
+                    int propertyBonus = knuPowerSystem.calculatePropertyClickBonus(knuPowerSystem.getGoldPerClick(), propertyCount);
+                    std::cout << "💎 클릭 획득: " << goldIncrease << "골드 (부동산 보너스: " << propertyBonus << "골드)" << std::endl;
+                }
             }
 
-            // F 키로 친구 정보 출력
             if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F) {
                 friendSystem.printFriendInfo();
             }
 
             if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 sf::Vector2f mousePos = window.mapPixelToCoords({ event.mouseButton.x, event.mouseButton.y });
-                std::wcout << L"[클릭 위치] x: " << static_cast<int>(mousePos.x) << L", y: " << static_cast<int>(mousePos.y) << std::endl;
 
                 std::string current = background.getCurrentFile();
 
-                // KNU 파워 화면
                 if (current == "KUN power_bg.png") {
                     if (knuPowerSystem.handleClick(mousePos, moneyDisplay)) {
                         updateTotalAsset();
@@ -831,18 +1007,21 @@ private:
                         shouldShowCharacter = isCharacterBackground(lastScene);
                     }
                 }
-                // 부동산 화면
                 else if (current == "building_bg.png") {
                     if (realEstate.handleClick(mousePos, moneyDisplay)) {
-                        knuPowerSystem.updatePropertyBonus(realEstate.getOwnedPropertyCount());
-                        updateTotalAsset();
+                        updateTotalAsset(); // 이미 updateDisplays 포함됨
+
+                        // 부동산 거래 시 정보 출력
+                        int propertyCount = realEstate.getOwnedPropertyCount();
+                        int totalSalesProfit = realEstate.getTotalSalesProfit();
+                        std::cout << "🏢 현재 부동산 " << propertyCount << "개 보유 중!" << std::endl;
+                        std::cout << "💰 역대 부동산 판매 총 수익: " << totalSalesProfit << "골드" << std::endl;
                     }
                     else if (sf::FloatRect(352, 92, 27, 23).contains(mousePos)) {
                         background.load(lastScene, window);
                         shouldShowCharacter = isCharacterBackground(lastScene);
                     }
                 }
-                // 친구 화면
                 else if (current == "friends_bg.png") {
                     if (friendSystem.handleClick(mousePos, moneyDisplay)) {
                         updateTotalAsset();
@@ -852,7 +1031,6 @@ private:
                         shouldShowCharacter = isCharacterBackground(lastScene);
                     }
                 }
-                // 구걸장소 이동 화면
                 else if (current == "MovingBeggingPlace_bg.png") {
                     if (sf::FloatRect(23, 159, 157, 189).contains(mousePos)) {
                         background.load("bg_playground.png", window);
@@ -875,33 +1053,27 @@ private:
                         shouldShowCharacter = isCharacterBackground(lastScene);
                     }
                 }
-                // 메인 게임 화면들
                 else if (current != "MovingBeggingPlace_bg.png" && current != "friends_bg.png") {
-                    // 하단 메뉴 클릭
                     if (clickableArea.getGlobalBounds().contains(mousePos)) {
                         lastScene = current;
                         background.load("MovingBeggingPlace_bg.png", window);
                         shouldShowCharacter = false;
                     }
-                    // 친구 메뉴
                     else if (sf::FloatRect(13, 570, 181, 39).contains(mousePos)) {
                         lastScene = current;
                         background.load("friends_bg.png", window);
                         shouldShowCharacter = false;
                     }
-                    // KNU 파워 메뉴
                     else if (sf::FloatRect(200, 570, 181, 39).contains(mousePos)) {
                         lastScene = current;
                         background.load("KUN power_bg.png", window);
                         shouldShowCharacter = false;
                     }
-                    // 부동산 메뉴
                     else if (sf::FloatRect(15, 621, 181, 39).contains(mousePos)) {
                         lastScene = current;
                         background.load("building_bg.png", window);
                         shouldShowCharacter = false;
                     }
-                    // 친구 캐릭터 직접 클릭 (메인 화면에서도 구매/레벨업 가능)
                     else if (friendSystem.handleClick(mousePos, moneyDisplay)) {
                         updateTotalAsset();
                     }
@@ -917,11 +1089,8 @@ private:
             character.update();
         }
 
-        // 친구들의 초당 수익 업데이트
         friendSystem.updateIncome(moneyDisplay);
-
         updateTotalAsset();
-        knuPowerSystem.updatePropertyBonus(realEstate.getOwnedPropertyCount());
     }
 
     void render() {
@@ -944,7 +1113,6 @@ private:
             if (shouldShowCharacter && isCharacterBackground(current)) {
                 character.draw(window);
 
-                // 소유한 친구 캐릭터들만 렌더링
                 if (friendSystem.isFriendOwned(0)) window.draw(mjSprite);
                 if (friendSystem.isFriendOwned(1)) window.draw(ahSprite);
                 if (friendSystem.isFriendOwned(2)) window.draw(jsSprite);
@@ -963,13 +1131,6 @@ int main() {
         std::cerr << "게임 초기화 실패!" << std::endl;
         return -1;
     }
-
-    std::cout << "=== 게임 조작법 ===" << std::endl;
-    std::cout << "스페이스바: 골드 획득" << std::endl;
-    std::cout << "F키: 친구 정보 출력" << std::endl;
-    std::cout << "마우스 클릭: 친구 구매/레벨업" << std::endl;
-    std::cout << "===================" << std::endl;
-
     game.run();
     return 0;
 }
